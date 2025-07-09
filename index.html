@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Matcher - Find Your Perfect Connection</title>
+    <meta name="description" content="Modern member matching app with intelligent algorithms for connecting community members based on complementary goals and industry alignment">
+    <meta name="keywords" content="member matching, community, networking, goals, industry, connections">
+    <meta name="author" content="Member Matcher">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://yourusername.github.io/member-matcher/">
+    <meta property="og:title" content="Member Matcher - Find Your Perfect Connection">
+    <meta property="og:description" content="Modern member matching app with intelligent algorithms for connecting community members">
+    <meta property="og:image" content="https://yourusername.github.io/member-matcher/og-image.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://yourusername.github.io/member-matcher/">
+    <meta property="twitter:title" content="Member Matcher - Find Your Perfect Connection">
+    <meta property="twitter:description" content="Modern member matching app with intelligent algorithms for connecting community members">
+    <meta property="twitter:image" content="https://yourusername.github.io/member-matcher/og-image.png">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="favicon.png">
+    
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Font Awesome is now removed -->
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="glo-logo-corner">
+                <a href="https://glo.community" target="_blank">
+                    <img src="favicon.png" alt="GLO Favicon" class="glo-logo-img">
+                </a>
+            </div>
+            <div class="header-content">
+                <h1 class="logo">GLO Members Matcher</h1>
+                <p class="subtitle">Connect with complementary goals and aligned industries</p>
+                <div class="version-badge">v1.0.0</div>
+            </div>
+        </header>
+
+        <!-- Loading State -->
+        <section class="loading-section" id="loadingSection" style="display: none;">
+            <div class="loading-card">
+                <div class="loading-spinner"></div>
+                <h3>Analyzing Member Data...</h3>
+                <p>Finding the best matches based on goals and industry alignment</p>
+                <div class="loading-progress">
+                    <div class="progress-bar"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection" style="display: none;">
+            <div class="matches-container" id="matchesContainer">
+                <!-- Matches will be populated here -->
+            </div>
+            <div class="pagination-controls" id="paginationControls" style="display:none;">
+                <button id="showMoreMatches" class="down-arrow" aria-label="Show more matches">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+                </button>
+            </div>
+        </section>
+
+        <!-- The footer is now removed for a cleaner, more minimal design -->
+    </div>
+
+    <!-- About Modal -->
+    <div id="aboutModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>About Member Matcher</h2>
+            <p>Member Matcher is a modern web application that intelligently connects community members based on complementary goals and industry alignment.</p>
+            <h3>How it works:</h3>
+            <ul>
+                <li><strong>Goal Complementarity (40%)</strong> - Matches people with complementary professional goals</li>
+                <li><strong>Industry Alignment (30%)</strong> - Connects people in related industries</li>
+                <li><strong>Role Complementarity (20%)</strong> - Pairs complementary roles</li>
+                <li><strong>Location Proximity (10%)</strong> - Considers geographic proximity</li>
+            </ul>
+            <p><strong>Privacy First:</strong> All data processing happens in your browser - your data never leaves your device.</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html> 

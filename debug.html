@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Member Matcher - Debug Mode</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .member-card {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            background: #fafafa;
+        }
+        .member-name {
+            font-weight: bold;
+            color: #333;
+        }
+        .member-details {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+        .missing-data {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        .has-data {
+            color: #27ae60;
+        }
+        button {
+            background: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #2980b9;
+        }
+        .stats {
+            background: #ecf0f1;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Member Matcher - Debug Mode</h1>
+    
+    <div class="debug-section">
+        <h2>Upload CSV File</h2>
+        <input type="file" id="csvFile" accept=".csv">
+        <button onclick="analyzeData()">Analyze Data</button>
+    </div>
+
+    <div class="debug-section" id="statsSection" style="display: none;">
+        <h2>📊 Data Analysis</h2>
+        <div id="stats"></div>
+    </div>
+
+    <div class="debug-section" id="membersSection" style="display: none;">
+        <h2>👥 Member Data</h2>
+        <div id="members"></div>
+    </div>
+
+    <div class="debug-section" id="matchesSection" style="display: none;">
+        <h2>🤝 Potential Matches</h2>
+        <div id="matches"></div>
+    </div>
+
+    <script>
+        let members = [];
+
+        document.getElementById('csvFile').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            try {
+                const text = await file.text();
+                members = parseCSV(text);
+                analyzeData();
+            } catch (error) {
+                console.error('Error reading file:', error);
+                alert('Error reading the CSV file.');
+            }
+        });
+
+        function parseCSV(csvText) {
+            const lines = csvText.split('\n');
+            const headers = lines[0].split(',').map(h => h.trim());
+            
+            const members = [];
+            
+            for (let i = 1; i < lines.length; i++) {
+                if (!lines[i].trim()) continue;
+                
+                const values = parseCSVLine(lines[i]);
+                if (values.length < headers.length) continue;
+                
+                const member = {};
+                headers.forEach((header, index) => {
+                    member[header] = values[index] || '';
+                });
+                
+                members.push(member);
+            }
+            
+            return members;
+        }
+
+        function parseCSVLine(line) {
+            const result = [];
+            let current = '';
+            let inQuotes = false;
+            
+            for (let i = 0; i < line.length; i++) {
+                const char = line[i];
+                
+                if (char === '"') {
+                    inQuotes = !inQuotes;
+                } else if (char === ',' && !inQuotes) {
+                    result.push(current.trim());
+                    current = '';
+                } else {
+                    current += char;
+                }
+            }
+            
+            result.push(current.trim());
+            return result;
+        }
+
+        function analyzeData() {
+            if (members.length === 0) {
+                alert('No data loaded. Please upload a CSV file first.');
+                return;
+            }
+
+            // Calculate statistics
+            const stats = {
+                totalMembers: members.length,
+                withNames: members.filter(m => m['First Name'] && m['Last Name']).length,
+                withGoals: members.filter(m => m['Professional Goals'] || m['Company Goals'] || m['Personal Goals']).length,
+                withIndustry: members.filter(m => m['Industry']).length,
+                withRole: members.filter(m => m['Role']).length,
+                withLocation: members.filter(m => m['Based In']).length,
+                withLinkedIn: members.filter(m => m['LinkedIn Profile']).length
+            };
+
+            // Display stats
+            document.getElementById('stats').innerHTML = `
+                <div class="stats">
+                    <h3>📈 Data Quality Report</h3>
+                    <p><strong>Total Members:</strong> ${stats.totalMembers}</p>
+                    <p><strong>With Names:</strong> ${stats.withNames} (${Math.round(stats.withNames/stats.totalMembers*100)}%)</p>
+                    <p><strong>With Goals:</strong> ${stats.withGoals} (${Math.round(stats.withGoals/stats.totalMembers*100)}%)</p>
+                    <p><strong>With Industry:</strong> ${stats.withIndustry} (${Math.round(stats.withIndustry/stats.totalMembers*100)}%)</p>
+                    <p><strong>With Role:</strong> ${stats.withRole} (${Math.round(stats.withRole/stats.totalMembers*100)}%)</p>
+                    <p><strong>With Location:</strong> ${stats.withLocation} (${Math.round(stats.withLocation/stats.totalMembers*100)}%)</p>
+                    <p><strong>With LinkedIn:</strong> ${stats.withLinkedIn} (${Math.round(stats.withLinkedIn/stats.totalMembers*100)}%)</p>
+                </div>
+            `;
+
+            // Display member details
+            const membersHtml = members.slice(0, 10).map((member, index) => {
+                const hasGoals = member['Professional Goals'] || member['Company Goals'] || member['Personal Goals'];
+                const hasIndustry = member['Industry'];
+                const hasRole = member['Role'];
+                
+                return `
+                    <div class="member-card">
+                        <div class="member-name">${index + 1}. ${member['First Name'] || 'No Name'} ${member['Last Name'] || ''}</div>
+                        <div class="member-details">
+                            <span class="${hasRole ? 'has-data' : 'missing-data'}">Role: ${member['Role'] || 'Missing'}</span> | 
+                            <span class="${hasIndustry ? 'has-data' : 'missing-data'}">Industry: ${member['Industry'] || 'Missing'}</span> | 
+                            <span class="${hasGoals ? 'has-data' : 'missing-data'}">Goals: ${hasGoals ? 'Present' : 'Missing'}</span>
+                        </div>
+                        <div class="member-details">
+                            <strong>Professional Goals:</strong> ${member['Professional Goals'] || 'None'} <br>
+                            <strong>Company Goals:</strong> ${member['Company Goals'] || 'None'} <br>
+                            <strong>Personal Goals:</strong> ${member['Personal Goals'] || 'None'}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            document.getElementById('members').innerHTML = membersHtml + 
+                (members.length > 10 ? `<p><em>Showing first 10 of ${members.length} members...</em></p>` : '');
+
+            // Find potential matches
+            const potentialMatches = findPotentialMatches();
+            document.getElementById('matches').innerHTML = potentialMatches;
+
+            // Show sections
+            document.getElementById('statsSection').style.display = 'block';
+            document.getElementById('membersSection').style.display = 'block';
+            document.getElementById('matchesSection').style.display = 'block';
+        }
+
+        function findPotentialMatches() {
+            const validMembers = members.filter(m => 
+                m['First Name'] && m['Last Name'] && 
+                (m['Professional Goals'] || m['Company Goals'] || m['Industry'])
+            );
+
+            if (validMembers.length < 2) {
+                return `<p style="color: #e74c3c;">❌ Not enough valid members for matching. Need at least 2 members with names and goals/industry.</p>`;
+            }
+
+            const matches = [];
+            let matchCount = 0;
+
+            for (let i = 0; i < validMembers.length && matchCount < 5; i++) {
+                for (let j = i + 1; j < validMembers.length && matchCount < 5; j++) {
+                    const member1 = validMembers[i];
+                    const member2 = validMembers[j];
+                    
+                    // Skip if same company
+                    if (getCompany(member1) === getCompany(member2) && getCompany(member1) !== '') {
+                        continue;
+                    }
+                    
+                    const matchScore = calculateMatchScore(member1, member2);
+                    
+                    if (matchScore > 0.3) {
+                        matches.push({
+                            member1,
+                            member2,
+                            score: matchScore
+                        });
+                        matchCount++;
+                    }
+                }
+            }
+
+            if (matches.length === 0) {
+                return `<p style="color: #e74c3c;">❌ No matches found with score > 0.3. Try lowering the threshold or adding more goal/industry data.</p>`;
+            }
+
+            return matches.map((match, index) => `
+                <div class="member-card">
+                    <h4>Match ${index + 1} (${Math.round(match.score * 100)}% score)</h4>
+                    <p><strong>${match.member1['First Name']} ${match.member1['Last Name']}</strong> (${match.member1['Role'] || 'No Role'}) - ${match.member1['Industry'] || 'No Industry'}</p>
+                    <p><strong>${match.member2['First Name']} ${match.member2['Last Name']}</strong> (${match.member2['Role'] || 'No Role'}) - ${match.member2['Industry'] || 'No Industry'}</p>
+                    <p><em>Goals 1:</em> ${extractGoals(match.member1).join(', ') || 'None'}</p>
+                    <p><em>Goals 2:</em> ${extractGoals(match.member2).join(', ') || 'None'}</p>
+                </div>
+            `).join('');
+        }
+
+        function calculateMatchScore(member1, member2) {
+            let score = 0;
+            let factors = 0;
+            
+            // Goal complementarity (40% weight)
+            const goalScore = calculateGoalComplementarity(member1, member2);
+            score += goalScore * 0.4;
+            factors++;
+            
+            // Industry alignment (30% weight)
+            const industryScore = calculateIndustryAlignment(member1, member2);
+            score += industryScore * 0.3;
+            factors++;
+            
+            // Role complementarity (20% weight)
+            const roleScore = calculateRoleComplementarity(member1, member2);
+            score += roleScore * 0.2;
+            factors++;
+            
+            // Location proximity (10% weight)
+            const locationScore = calculateLocationProximity(member1, member2);
+            score += locationScore * 0.1;
+            factors++;
+            
+            return factors > 0 ? score / factors : 0;
+        }
+
+        function calculateGoalComplementarity(member1, member2) {
+            const goals1 = extractGoals(member1);
+            const goals2 = extractGoals(member2);
+            
+            if (goals1.length === 0 || goals2.length === 0) return 0.5;
+            
+            const complementaryPairs = [
+                ['Fundraising', 'Investor'],
+                ['Sales Growth', 'Strategic Partners/GTM'],
+                ['User Growth', 'Brand Awareness'],
+                ['Hiring', 'Network']
+            ];
+            
+            let complementarityScore = 0;
+            let totalChecks = 0;
+            
+            for (const [goal1, goal2] of complementaryPairs) {
+                if (goals1.includes(goal1) && goals2.includes(goal2)) {
+                    complementarityScore += 1;
+                }
+                if (goals1.includes(goal2) && goals2.includes(goal1)) {
+                    complementarityScore += 1;
+                }
+                totalChecks += 2;
+            }
+            
+            const sharedGoals = goals1.filter(goal => goals2.includes(goal));
+            const sharedScore = Math.min(sharedGoals.length * 0.2, 0.3);
+            
+            return totalChecks > 0 ? (complementarityScore / totalChecks) + sharedScore : 0.5;
+        }
+
+        function calculateIndustryAlignment(member1, member2) {
+            const industry1 = member1['Industry'] || '';
+            const industry2 = member2['Industry'] || '';
+            
+            if (!industry1 || !industry2) return 0.5;
+            
+            const industries1 = industry1.split(',').map(i => i.trim());
+            const industries2 = industry2.split(',').map(i => i.trim());
+            
+            const overlap = industries1.filter(ind => industries2.includes(ind));
+            
+            if (overlap.length > 0) {
+                return 0.8 + (overlap.length * 0.1);
+            }
+            
+            return 0.3;
+        }
+
+        function calculateRoleComplementarity(member1, member2) {
+            const role1 = member1['Role'] || '';
+            const role2 = member2['Role'] || '';
+            
+            if (!role1 || !role2) return 0.5;
+            
+            const complementaryRoles = [
+                ['Founder/CEO', 'VC/Investor'],
+                ['Founder/CEO', 'Investor'],
+                ['VC/Investor', 'Founder/CEO'],
+                ['Investor', 'Founder/CEO']
+            ];
+            
+            for (const [r1, r2] of complementaryRoles) {
+                if ((role1.includes(r1) && role2.includes(r2)) ||
+                    (role1.includes(r2) && role2.includes(r1))) {
+                    return 0.9;
+                }
+            }
+            
+            if (role1 === role2) {
+                return 0.7;
+            }
+            
+            return 0.5;
+        }
+
+        function calculateLocationProximity(member1, member2) {
+            const location1 = member1['Based In'] || '';
+            const location2 = member2['Based In'] || '';
+            
+            if (!location1 || !location2) return 0.5;
+            
+            if (location1 === location2) {
+                return 0.9;
+            }
+            
+            return 0.4;
+        }
+
+        function extractGoals(member) {
+            const professionalGoals = member['Professional Goals'] || '';
+            const companyGoals = member['Company Goals'] || '';
+            const personalGoals = member['Personal Goals'] || '';
+            
+            const allGoals = `${professionalGoals},${companyGoals},${personalGoals}`;
+            return allGoals.split(',')
+                .map(goal => goal.trim())
+                .filter(goal => goal.length > 0)
+                .map(goal => goal.replace(/"/g, ''));
+        }
+
+        function getCompany(member) {
+            return member['Company Website'] || member['One-liner'] || '';
+        }
+    </script>
+</body>
+</html> 
