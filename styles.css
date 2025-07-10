@@ -11,6 +11,7 @@ body {
     background-color: #121212;
     color: #e0e0e0;
     margin: 0;
+    padding-top: 116px; /* Account for fixed header */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -42,8 +43,8 @@ body {
 /* --- Header --- */
 .header {
     text-align: center;
-    margin-bottom: 40px;
-    padding: 40px 0;
+    margin-bottom: 15px;
+    padding: 20px 0;
     position: relative;
 }
 
@@ -51,28 +52,23 @@ body {
     background: none;
     backdrop-filter: none;
     border-radius: 0;
-    padding: 60px 0 40px 0;
+    padding: 20px 0 10px 0;
     box-shadow: none;
     border: none;
     position: relative;
 }
 
 .logo {
-    font-size: 3rem;
+    font-size: 4.2rem;
     font-weight: 800;
+    margin-bottom: 0.5rem;
+    line-height: 1.1;
     background: linear-gradient(90deg, #A18CD1 0%, #FBC2EB 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 15px;
-    margin-left: 0;
-    margin-right: 0;
-    padding-left: 0;
-    padding-right: 0;
+    color: transparent;
+    display: inline-block;
 }
 
 .logo i {
@@ -91,9 +87,7 @@ body {
 }
 
 .version-badge {
-    position: absolute;
-    top: 20px;
-    right: 20px;
+    position: static;
     background: #23243A;
     color: #FBC2EB;
     padding: 5px 12px;
@@ -348,16 +342,15 @@ body {
     box-shadow: 0 4px 24px 0 rgba(0,0,0,0.3), 0 1.5px 4px 0 rgba(0,0,0,0.2);
     border: 1px solid #2a2a2a;
     padding: 2.2rem 2.2rem 1.6rem 2.2rem;
-    margin-bottom: 0;
-    transition: box-shadow 0.2s;
+    margin-bottom: 2.5rem;
     max-width: none;
     margin-left: 0;
     margin-right: 0;
     position: relative;
-    min-height: 480px; /* Ensure uniform card height */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    justify-content: flex-start;
+    transition: opacity 0.3s cubic-bezier(.22,1,.36,1), filter 0.3s cubic-bezier(.22,1,.36,1), box-shadow 0.2s;
 }
 
 .match-card:hover {
@@ -648,6 +641,32 @@ body {
         padding: 20px;
         margin: 20px;
     }
+
+    /* Fix bullet point alignment on mobile */
+    .explanation-item {
+        align-items: flex-start;
+        line-height: 1.4;
+        margin-bottom: 8px;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    .explanation-item::before {
+        margin-top: 8px;
+        flex-shrink: 0;
+        margin-right: 10px;
+        min-width: 6px;
+    }
+
+    .match-explanation {
+        padding: 1rem;
+    }
+
+    .explanation-list {
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
 }
 
 /* Smooth animations */
@@ -727,11 +746,25 @@ body {
 } 
 
 /* GLO logo in top left corner */
+/* Top Header Bar */
+.top-header-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 116px;
+    background: rgba(18, 18, 18, 0.95);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 30px;
+    z-index: 100;
+}
+
 .glo-logo-corner {
-    position: absolute;
-    top: 32px;
-    left: 32px;
-    z-index: 10;
+    position: static;
+    z-index: 1;
 }
 .glo-logo-img {
     width: 56px;
@@ -789,10 +822,7 @@ body {
     margin: 0 auto;
 }
 
-.match-card {
-    padding: 24px;
-    border-width: 1px;
-}
+/* Redundant .match-card rule removed - consolidated into main rule */
 
 .match-card-content {
     display: grid;
@@ -851,9 +881,7 @@ body {
     border: 1px solid #A18CD1;
 }
 
-.explanation-title {
-    color: #FBC2EB;
-}
+/* Redundant .explanation-title rule removed - consolidated into main rule */
 
 .explanation-text {
     color: #E6E6F0;
@@ -872,10 +900,7 @@ body {
     border: none;
 }
 
-.primary-action {
-    background: #E66A8A;
-    color: #FFFFFF;
-}
+/* Redundant .primary-action rule removed - consolidated into main rule */
 
 .secondary-action {
     background: #23243A;
@@ -912,15 +937,7 @@ body {
     gap: 0;
 }
 
-.match-card {
-    background: none;
-    border: none;
-    box-shadow: none;
-    padding: 32px 0;
-    border-bottom: 1px solid #23243A;
-    margin-bottom: 0;
-    border-radius: 0;
-}
+/* Redundant .match-card rule removed - consolidated into main rule */
 .match-card:last-child {
     border-bottom: none;
 }
@@ -932,23 +949,11 @@ body {
     padding: 0;
 }
 
-.match-explanation {
-    background: none;
-    border: none;
-    text-align: left;
-    margin-top: 24px;
-    padding: 0;
-}
+/* Redundant .match-explanation rule removed - consolidated into main rule */
 
-.explanation-title {
-    justify-content: center;
-}
+/* Redundant .explanation-title rule removed - consolidated into main rule */
 
-.primary-action {
-    background: #F0F0F0;
-    color: #0D0F1A;
-    font-weight: 700;
-}
+/* Redundant .primary-action rule removed - consolidated into main rule */
 
 .secondary-action {
     background: #1A1C2A;
@@ -1006,16 +1011,7 @@ select:focus, input:focus, textarea:focus {
     border: 1.5px solid #FF6B35;
 } 
 
-.match-card {
-    background: #1a1a1a;
-    border-radius: 22px;
-    box-shadow: 0 4px 24px 0 rgba(0,0,0,0.3), 0 1.5px 4px 0 rgba(0,0,0,0.2);
-    border: 1px solid #2a2a2a;
-    padding: 2.2rem 2.2rem 1.6rem 2.2rem;
-    margin-bottom: 2.5rem;
-    transition: box-shadow 0.2s;
-    position: relative;
-}
+/* Redundant .match-card rule removed - consolidated into main rule */
 .match-card-header {
     margin-bottom: 1.2rem;
 }
@@ -1100,24 +1096,28 @@ select:focus, input:focus, textarea:focus {
     transition: background 0.18s, color 0.18s;
 }
 .action-button.primary-action {
-    background: linear-gradient(90deg, #FF6B35 0%, #F7931E 100%);
+    background: linear-gradient(90deg, #FFB86C 0%, #FF6B35 100%);
     color: #fff;
-    font-weight: 700;
-    padding: 12px 28px;
-    border-radius: 24px;
-    font-size: 1.1rem;
-    transition: all 0.2s cubic-bezier(.4,0,.2,1);
-    box-shadow: 0 4px 16px rgba(255, 107, 53, 0.12);
-    border: none;
+    font-weight: 600;
+    padding: 10px 28px;
+    border-radius: 999px;
+    font-size: 1.08rem;
+    border: 2px solid #FF8C3B;
+    box-shadow: 0 2px 8px rgba(255, 140, 59, 0.18);
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
+    letter-spacing: 0.01em;
+    min-width: 0;
+    gap: 0;
+    transition: box-shadow 0.38s cubic-bezier(.22,1,.36,1), background 0.38s cubic-bezier(.22,1,.36,1), border 0.38s cubic-bezier(.22,1,.36,1), transform 0.38s cubic-bezier(.22,1,.36,1);
 }
 .action-button.primary-action:hover {
-    background: linear-gradient(90deg, #F7931E 0%, #FF6B35 100%);
-    box-shadow: 0 8px 24px rgba(255, 107, 53, 0.18);
-    transform: translateY(-2px) scale(1.04);
+    background: linear-gradient(90deg, #FF6B35 0%, #FFB86C 100%);
+    box-shadow: 0 8px 32px rgba(255, 140, 59, 0.22);
+    border-color: #FF6B35;
+    filter: brightness(1.06);
+    transform: scale(1.045) translateY(-2px);
 }
 .check-intro-btn {
     background: #333333;
@@ -1128,27 +1128,38 @@ select:focus, input:focus, textarea:focus {
     background: #FF6B35;
     color: #fff;
 }
-.intro-checked {
-    opacity: 0.55;
-    background: #1a1a1a !important;
-} 
+/* Removed .intro-checked class - functionality moved to .dimmed class */ 
 
 .intro-checkbox-label {
-    display: flex;
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    display: none;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
     color: #cccccc;
-    margin-left: 12px;
+    background: none;
+    margin: 0;
+    z-index: 2;
+}
+
+.intro-checkbox-label[style*="display: block"],
+.intro-checkbox-label[style*="display: "] {
+    display: flex !important;
 }
 
 .intro-checkbox {
     width: 18px;
     height: 18px;
-    accent-color: #FF6B35;
+    accent-color: initial;
+    background: #fff;
+    border: 1.5px solid #ccc;
+    border-radius: 4px;
     cursor: pointer;
+    appearance: auto;
 }
 
 .checkbox-text {
@@ -1163,4 +1174,218 @@ select:focus, input:focus, textarea:focus {
 .linkedin-icon.icon-right {
     margin-left: 6px;
     vertical-align: middle;
+} 
+
+/* Redundant .match-explanation rule removed - consolidated into main rule */
+
+/* Redundant .match-actions rule removed - consolidated into main rule */ 
+
+.handshake-outline {
+    width: 1.4em;
+    height: 1.4em;
+    stroke: #A18CD1;
+    stroke-width: 2.2;
+    vertical-align: middle;
+    margin: 0 8px;
+    display: inline-block;
+    filter: drop-shadow(0 0 8px #a18cd1cc);
+    animation: handshake-glow 1.6s ease-in-out infinite alternate;
+}
+
+@keyframes handshake-glow {
+    0% {
+        filter: drop-shadow(0 0 2px #a18cd1cc);
+        opacity: 0.7;
+    }
+    100% {
+        filter: drop-shadow(0 0 16px #a18cd1ff);
+        opacity: 1;
+    }
+}
+
+.checkmark-white {
+    width: 1.6em;
+    height: 1.6em;
+    stroke: #fff;
+    stroke-width: 3;
+    background: none;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.18));
+    border-radius: 50%;
+    display: inline-block;
+} 
+
+.dimmed {
+    opacity: 0.55;
+    filter: grayscale(0.2) brightness(0.92);
+}
+
+.dimmed .action-button.primary-action {
+    pointer-events: none;
+    filter: grayscale(0.5) brightness(0.92);
+}
+
+.checkmark-hollow {
+    width: 1.6em;
+    height: 1.6em;
+    stroke: #fff;
+    stroke-width: 2.2;
+    background: none;
+    filter: drop-shadow(0 1px 4px rgba(0,0,0,0.18));
+    border-radius: 50%;
+    display: inline-block;
+    opacity: 0.7;
+} 
+
+/* CSV Upload Card Styles */
+.csv-upload-card {
+    background: rgba(36, 34, 54, 0.85);
+    border-radius: 32px;
+    box-shadow: 0 8px 32px rgba(161, 140, 209, 0.18);
+    border: 1.5px solid #A18CD1;
+    padding: 48px 36px 36px 36px;
+    max-width: 420px;
+    margin: 60px auto 0 auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    backdrop-filter: blur(12px);
+    position: relative;
+}
+.csv-upload-card h2 {
+    font-size: 2.1rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, #A18CD1 0%, #FBC2EB 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    color: transparent;
+    margin-bottom: 1.5rem;
+    text-align: center;
+}
+.csv-upload-card input[type="file"] {
+    background: #23243A;
+    color: #FBC2EB;
+    border: 1.5px solid #A18CD1;
+    border-radius: 18px;
+    padding: 12px 18px;
+    font-size: 1.08rem;
+    margin-bottom: 1.2rem;
+    width: 100%;
+    cursor: pointer;
+    transition: border 0.2s;
+}
+.csv-upload-card input[type="file"]:focus {
+    outline: none;
+    border: 1.5px solid #FBC2EB;
+}
+#customFileBtn {
+    padding: 12px 36px;
+    font-size: 1.1rem;
+    border-radius: 24px;
+    background: linear-gradient(90deg, #FFB86C 0%, #FF7E5F 100%);
+    color: #23243A;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(255, 186, 108, 0.15);
+    margin-bottom: 0.5rem;
+    transition: box-shadow 0.38s cubic-bezier(.22,1,.36,1), background 0.38s cubic-bezier(.22,1,.36,1), transform 0.38s cubic-bezier(.22,1,.36,1);
+    display: block;
+    width: 100%;
+}
+#customFileBtn:hover {
+    background: linear-gradient(90deg, #FF7E5F 0%, #FFB86C 100%);
+    color: #181926;
+    transform: scale(1.045) translateY(-2px);
+    box-shadow: 0 8px 32px rgba(255, 186, 108, 0.22);
+}
+#selectedFileName {
+    color: #FBC2EB;
+    font-size: 1.02rem;
+    min-height: 1.2em;
+    display: block;
+    text-align: center;
+    word-break: break-all;
+}
+.csv-upload-card button {
+    padding: 12px 36px;
+    font-size: 1.1rem;
+    border-radius: 24px;
+    background: linear-gradient(90deg, #A18CD1 0%, #FBC2EB 100%);
+    color: #23243A;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(251, 194, 235, 0.15);
+    margin-bottom: 0.5rem;
+    transition: box-shadow 0.38s cubic-bezier(.22,1,.36,1), background 0.38s cubic-bezier(.22,1,.36,1), transform 0.38s cubic-bezier(.22,1,.36,1);
+}
+.csv-upload-card button:hover {
+    background: linear-gradient(90deg, #FBC2EB 0%, #A18CD1 100%);
+    color: #181926;
+    transform: scale(1.045) translateY(-2px);
+    box-shadow: 0 8px 32px rgba(251, 194, 235, 0.22);
+}
+.csv-upload-card p {
+    margin-top: 1.5rem;
+    color: #B0B3C6;
+    font-size: 1rem;
+    max-width: 340px;
+    text-align: center;
+} 
+
+.change-csv-btn {
+    background: none;
+    border: none;
+    color: #FBC2EB;
+    font-size: 0.98rem;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 12px;
+    border-radius: 16px;
+    transition: background 0.18s, color 0.18s;
+    margin-left: 2px;
+}
+.change-csv-btn:hover {
+    background: #23243A;
+    color: #A18CD1;
+} 
+
+/* Smooth animation for Start Matching button */
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-in-up {
+    animation: slideInUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Start Matching button specific styles */
+#startMatchingBtn {
+    padding: 12px 36px;
+    font-size: 1.1rem;
+    border-radius: 24px;
+    background: linear-gradient(90deg, #A18CD1 0%, #FBC2EB 100%);
+    color: #23243A;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(251, 194, 235, 0.15);
+    margin-top: 0.5rem;
+    transition: box-shadow 0.38s cubic-bezier(.22,1,.36,1), background 0.38s cubic-bezier(.22,1,.36,1), transform 0.38s cubic-bezier(.22,1,.36,1);
+    width: 100%;
+}
+
+#startMatchingBtn:hover {
+    background: linear-gradient(90deg, #FBC2EB 0%, #A18CD1 100%);
+    color: #181926;
+    transform: scale(1.045) translateY(-2px);
+    box-shadow: 0 8px 32px rgba(251, 194, 235, 0.22);
 } 

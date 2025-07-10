@@ -9,7 +9,7 @@ class MemberMatcher {
         this.displayedMatches = 0;
         
         // Fairness controls
-        this.maxMatchesPerMember = 3; // quota per cycle
+        this.maxMatchesPerMember = 15; // quota per cycle (increased from 10)
         this.appearanceCount = {}; // memberId -> count
     }
 
@@ -34,7 +34,6 @@ class MemberMatcher {
     setupInfiniteScroll() {
         const container = document.getElementById('matchesContainer');
         // Use window scroll if container is not scrollable
-        const scrollTarget = container;
         let loading = false;
         window.addEventListener('scroll', () => {
             if (loading) return;
@@ -154,8 +153,11 @@ class MemberMatcher {
             (member['Professional Goals'] || member['Company Goals'] || member['Industry'])
         );
         
-        // If we have too many members, limit to top 100 for performance
-        const membersToProcess = validMembers.length > 100 ? validMembers.slice(0, 100) : validMembers;
+        // RANDOMIZE member order to get different people each time
+        const shuffledMembers = [...validMembers].sort(() => Math.random() - 0.5);
+        
+        // If we have too many members, limit to top 300 for performance (increased from 100)
+        const membersToProcess = shuffledMembers.length > 300 ? shuffledMembers.slice(0, 300) : shuffledMembers;
         
         for (let i = 0; i < membersToProcess.length; i++) {
             for (let j = i + 1; j < membersToProcess.length; j++) {
@@ -174,20 +176,28 @@ class MemberMatcher {
                 
                 const matchScore = this.calculateMatchScore(member1, member2);
                 
-                // Only include matches with decent scores for better performance
-                if (matchScore >= 0.1) {
+                // Only include matches with decent scores for better performance (lowered threshold)
+                if (matchScore >= 0.05) {
                     matches.push({
                         member1,
                         member2,
                         score: matchScore,
-                        explanation: this.generateMatchExplanation(member1, member2, matchScore)
+                        explanation: this.generateMatchExplanation(member1, member2)
                     });
                 }
             }
         }
         
-        // Sort by score descending and limit to top 200 matches for performance
-        return matches.sort((a, b) => b.score - a.score).slice(0, 200);
+        // Sort by score descending with some randomization for variety
+        const sortedMatches = matches.sort((a, b) => {
+            // Add small random factor to mix up matches with similar scores
+            const scoreDiff = b.score - a.score;
+            const randomFactor = (Math.random() - 0.5) * 0.02; // Small random adjustment
+            return scoreDiff + randomFactor;
+        });
+        
+        // Limit to top 1000 matches for performance (increased from 200)
+        return sortedMatches.slice(0, 1000);
     }
 
     calculateMatchScore(member1, member2) {
@@ -356,7 +366,7 @@ class MemberMatcher {
         return member['Company'] || member['Company Name'] || '';
     }
 
-    generateMatchExplanation(member1, member2, score) {
+    generateMatchExplanation(member1, member2) {
         const explanations = [];
         const shownGoals = new Set();
         
@@ -426,9 +436,7 @@ class MemberMatcher {
             matchesToShow.forEach((match, index) => {
                 const matchId = `${match.member1['First Name']}_${match.member1['Last Name']}__${match.member2['First Name']}_${match.member2['Last Name']}`;
                 const matchCard = this.createMatchCard(match, index, matchId);
-                if (this.introducedMatches.includes(matchId)) {
-                    matchCard.classList.add('intro-checked');
-                }
+                // No need to add intro-checked class - dimming is handled in createMatchCard
                 container.appendChild(matchCard);
             });
             
@@ -437,6 +445,7 @@ class MemberMatcher {
         }
         
         document.getElementById('resultsSection').style.display = 'block';
+        if (window.lucide) lucide.createIcons();
     }
 
     loadMoreMatches() {
@@ -450,9 +459,7 @@ class MemberMatcher {
         newMatches.forEach((match, index) => {
             const matchId = `${match.member1['First Name']}_${match.member1['Last Name']}__${match.member2['First Name']}_${match.member2['Last Name']}`;
             const matchCard = this.createMatchCard(match, startIndex + index, matchId);
-            if (this.introducedMatches.includes(matchId)) {
-                matchCard.classList.add('intro-checked');
-            }
+            // No need to add intro-checked class - dimming is handled in createMatchCard
             container.appendChild(matchCard);
         });
         
@@ -462,6 +469,7 @@ class MemberMatcher {
         if (this.displayedMatches >= this.matches.length) {
             paginationControls.style.display = 'none';
         }
+        if (window.lucide) lucide.createIcons();
     }
 
     // Ensure no member appears in more than maxMatchesPerMember matches
@@ -499,11 +507,12 @@ class MemberMatcher {
         const member1 = match.member1;
         const member2 = match.member2;
 
-        let label = '';
-        if (match.score >= 0.18) label = 'Strong Match';
-        else if (match.score >= 0.15) label = 'Good Match';
-        else if (match.score >= 0.12) label = 'Potential Match';
-        else label = 'Interesting Connection';
+        // Match quality labels (commented out as not currently used in UI)
+        // let label = '';
+        // if (match.score >= 0.18) label = 'Strong Match';
+        // else if (match.score >= 0.15) label = 'Good Match';
+        // else if (match.score >= 0.12) label = 'Potential Match';
+        // else label = 'Interesting Connection';
 
         const member1Name = `${this.formatName(member1['First Name'])} ${this.formatName(member1['Last Name'])}`;
         const member2Name = `${this.formatName(member2['First Name'])} ${this.formatName(member2['Last Name'])}`;
@@ -529,11 +538,13 @@ class MemberMatcher {
                 <div class="match-info">
                     <div class="match-names">
                         <h3>
-                            ${member1Display} &lt;&gt; ${member2Display}
+                            ${member1Display} <i data-lucide="handshake" class="handshake-outline"></i> ${member2Display}
                         </h3>
                     </div>
-                    <div class="match-score" data-score-label="${label}">${label}</div>
                 </div>
+                <span class="intro-check-icon" style="display:none; position:absolute; top:16px; right:20px; z-index:2; cursor:pointer;">
+                    <i data-lucide="check" class="checkmark-white"></i>
+                </span>
             </div>
             <div class="match-explanation">
                 <div class="explanation-title">
@@ -549,45 +560,41 @@ class MemberMatcher {
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
                     Intro
                 </a>
-                <label class="intro-checkbox-label">
-                    <input type="checkbox" class="intro-checkbox" data-matchid="${matchId}">
-                    <span class="checkbox-text">Introduced</span>
-                </label>
             </div>
         `;
-        
-        // Checkbox logic
-        const checkbox = card.querySelector('.intro-checkbox');
+        // Check icon logic
+        const introCheckIcon = card.querySelector('.intro-check-icon');
+        const checkIcon = introCheckIcon.querySelector('i');
         const introduceBtn = card.querySelector('.primary-action');
-        
-        // Set initial state
+        // Show check if already introduced
         if (this.introducedMatches.includes(matchId)) {
-            checkbox.checked = true;
-            card.classList.add('intro-checked');
+            introCheckIcon.style.display = '';
+            card.classList.add('dimmed');
         }
-        
-        // Auto-check when introduce button is clicked
+        // Show check and dim when intro is clicked
         introduceBtn.addEventListener('click', () => {
-            if (!checkbox.checked) {
-                checkbox.checked = true;
+            if (!this.introducedMatches.includes(matchId)) {
                 this.introducedMatches.push(matchId);
                 this.saveIntroducedMatches();
-                card.classList.add('intro-checked');
+                introCheckIcon.style.display = '';
+                card.classList.add('dimmed');
+                if (window.lucide) lucide.createIcons();
             }
         });
-        
-        // Manual checkbox toggle
-        checkbox.addEventListener('change', (e) => {
-            if (e.target.checked) {
-                if (!this.introducedMatches.includes(matchId)) {
-                    this.introducedMatches.push(matchId);
-                    this.saveIntroducedMatches();
-                }
-                card.classList.add('intro-checked');
+        // Toggle dim and icon when check is clicked
+        introCheckIcon.addEventListener('click', () => {
+            if (card.classList.contains('dimmed')) {
+                card.classList.remove('dimmed');
+                checkIcon.setAttribute('data-lucide', 'circle-check');
+                checkIcon.classList.remove('checkmark-white');
+                checkIcon.classList.add('checkmark-hollow');
+                if (window.lucide) lucide.createIcons();
             } else {
-                this.introducedMatches = this.introducedMatches.filter(id => id !== matchId);
-                this.saveIntroducedMatches();
-                card.classList.remove('intro-checked');
+                card.classList.add('dimmed');
+                checkIcon.setAttribute('data-lucide', 'check');
+                checkIcon.classList.remove('checkmark-hollow');
+                checkIcon.classList.add('checkmark-white');
+                if (window.lucide) lucide.createIcons();
             }
         });
         return card;
@@ -604,21 +611,103 @@ class MemberMatcher {
 }
 
 // Initialize the application
-window.addEventListener('DOMContentLoaded', async () => {
-    try {
-        const response = await fetch('members.csv');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const text = await response.text();
+window.addEventListener('DOMContentLoaded', () => {
+    const csvUploadSection = document.getElementById('csvUploadSection');
+    const mainAppContainer = document.getElementById('mainAppContainer');
+    const csvFileInput = document.getElementById('csvFileInput');
+    const startMatchingBtn = document.getElementById('startMatchingBtn');
+    const customFileBtn = document.getElementById('customFileBtn');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const changeCsvBtn = document.getElementById('changeCsvBtn');
+    let csvText = '';
+
+    // Helper to load matcher from CSV text
+    function loadMatcherFromCsv(text) {
         const matcher = new MemberMatcher();
         matcher.members = matcher.parseCSV(text);
-        
-        // Call the new initialization method
+        window.matcher = matcher; // for debugging
+        csvUploadSection.style.display = 'none';
+        mainAppContainer.style.display = '';
+        changeCsvBtn.style.display = ''; // Show the Change CSV button
         matcher.initializeApp();
-
-    } catch (error) {
-        console.error("Critical Error: Could not load or parse members.csv.", error);
-        alert('Could not load member data. Please check the browser console (F12) for more details.');
+        if (window.lucide) {
+            lucide.createIcons();
+        }
     }
+
+    // On page load, check for CSV in localStorage
+    const storedCsv = localStorage.getItem('uploadedMembersCsv');
+    if (storedCsv) {
+        csvText = storedCsv;
+        loadMatcherFromCsv(csvText);
+    } else {
+        mainAppContainer.style.display = 'none';
+        csvUploadSection.style.display = 'flex';
+    }
+
+    // Custom file button logic
+    customFileBtn.addEventListener('click', () => {
+        csvFileInput.click();
+    });
+
+    csvFileInput.addEventListener('change', async (e) => {
+        const file = e.target.files[0];
+        if (!file) {
+            // Hide start button if no file selected
+            startMatchingBtn.style.display = 'none';
+            selectedFileName.textContent = '';
+            return;
+        }
+        
+        // Show loading state while reading file
+        selectedFileName.textContent = 'Loading...';
+        selectedFileName.style.color = '#A18CD1';
+        
+        try {
+            csvText = await file.text();
+            
+            // Show file name with success styling
+            selectedFileName.textContent = `✓ ${file.name}`;
+            selectedFileName.style.color = '#FBC2EB';
+            
+            // Show Start Matching button with animation
+            startMatchingBtn.style.display = 'block';
+            startMatchingBtn.classList.add('slide-in-up');
+            
+            // Remove animation class after animation completes
+            setTimeout(() => {
+                startMatchingBtn.classList.remove('slide-in-up');
+            }, 400);
+            
+        } catch {
+            // Handle error state
+            selectedFileName.textContent = '❌ Error reading file';
+            selectedFileName.style.color = '#FF6B6B';
+            startMatchingBtn.style.display = 'none';
+        }
+    });
+
+    startMatchingBtn.addEventListener('click', () => {
+        if (!csvText) {
+            alert('Please select a CSV file first.');
+            return;
+        }
+        // Save CSV to localStorage and load matcher
+        localStorage.setItem('uploadedMembersCsv', csvText);
+        loadMatcherFromCsv(csvText);
+    });
+
+    // Change CSV button logic
+    changeCsvBtn.addEventListener('click', () => {
+        localStorage.removeItem('uploadedMembersCsv');
+        // Reset upload state
+        mainAppContainer.style.display = 'none';
+        csvUploadSection.style.display = 'flex';
+        changeCsvBtn.style.display = 'none'; // Hide the Change CSV button
+        csvText = '';
+        selectedFileName.textContent = '';
+        selectedFileName.style.color = '#FBC2EB';
+        csvFileInput.value = '';
+        startMatchingBtn.style.display = 'none';
+    });
 }); 

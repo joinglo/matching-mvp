@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Member Matcher - Find Your Perfect Connection</title>
+    <title>GLO Members Matcher</title>
     <meta name="description" content="Modern member matching app with intelligent algorithms for connecting community members based on complementary goals and industry alignment">
     <meta name="keywords" content="member matching, community, networking, goals, industry, connections">
-    <meta name="author" content="Member Matcher">
+    <meta name="author" content="GLO Members Matcher">
     
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://yourusername.github.io/member-matcher/">
-    <meta property="og:title" content="Member Matcher - Find Your Perfect Connection">
+    <meta property="og:title" content="GLO Members Matcher">
     <meta property="og:description" content="Modern member matching app with intelligent algorithms for connecting community members">
     <meta property="og:image" content="https://yourusername.github.io/member-matcher/og-image.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://yourusername.github.io/member-matcher/">
-    <meta property="twitter:title" content="Member Matcher - Find Your Perfect Connection">
+    <meta property="twitter:title" content="GLO Members Matcher">
     <meta property="twitter:description" content="Modern member matching app with intelligent algorithms for connecting community members">
     <meta property="twitter:image" content="https://yourusername.github.io/member-matcher/og-image.png">
 
@@ -31,18 +31,35 @@
     <!-- Font Awesome is now removed -->
 </head>
 <body>
-    <div class="container">
-        <!-- Header -->
+    <!-- Top Header Bar -->
+    <div class="top-header-bar">
+        <div class="glo-logo-corner">
+            <a href="https://joinglocommunity.com/" target="_blank">
+                <img src="favicon.png" alt="GLO Favicon" class="glo-logo-img">
+            </a>
+        </div>
+        <div style="display: flex; align-items: center; gap: 18px;">
+            <button id="changeCsvBtn" class="change-csv-btn" type="button" style="display: none;">Change CSV</button>
+            <div class="version-badge">v1.0.0</div>
+        </div>
+    </div>
+
+    <!-- CSV Upload Section (shown before app loads) -->
+    <div id="csvUploadSection">
+        <div class="csv-upload-card">
+            <h2>Upload Members</h2>
+            <input type="file" id="csvFileInput" accept=".csv" style="display:none;" />
+            <button id="customFileBtn" type="button">Choose CSV File</button>
+            <span id="selectedFileName" style="margin: 0.7rem 0 1.2rem 0; color: #FBC2EB; font-size: 1.02rem; min-height: 1.2em; display: block;"></span>
+            <button id="startMatchingBtn" style="display:none;">Start Matching</button>
+        </div>
+    </div>
+
+    <div class="container" id="mainAppContainer" style="display: none;">
+        <!-- Main Title Header -->
         <header class="header">
-            <div class="glo-logo-corner">
-                <a href="https://glo.community" target="_blank">
-                    <img src="favicon.png" alt="GLO Favicon" class="glo-logo-img">
-                </a>
-            </div>
             <div class="header-content">
                 <h1 class="logo">GLO Members Matcher</h1>
-                <p class="subtitle">Connect with complementary goals and aligned industries</p>
-                <div class="version-badge">v1.0.0</div>
             </div>
         </header>
 
@@ -90,6 +107,8 @@
         </div>
     </div>
 
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
     <script src="script.js"></script>
 </body>
 </html> 
