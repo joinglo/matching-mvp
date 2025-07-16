@@ -7,6 +7,7 @@ class MemberMatcher {
         this.currentPage = 0;
         this.matchesPerPage = 4;
         this.displayedMatches = 0;
+        this.selectedMember = null; // Track selected member for one-at-a-time matching
         
         // Fairness controls
         this.maxMatchesPerMember = 15; // quota per cycle (increased from 10)
@@ -27,7 +28,7 @@ class MemberMatcher {
     initializeApp() {
         this.initializeEventListeners();
         this.initializeModal();
-        this.generateMatches();
+        this.setupMemberSelection(); // Add member selection setup
         this.setupInfiniteScroll();
     }
 
@@ -48,6 +49,166 @@ class MemberMatcher {
                 }
             }
         });
+    }
+
+    setupMemberSelection() {
+        // Create member selection interface
+        const resultsSection = document.getElementById('resultsSection');
+        const memberSelectionHTML = `
+            <div class="member-selection-section" id="memberSelectionSection">
+                <div class="member-selection-card">
+                    <h3>Select a Member to Generate Matches</h3>
+                    <div class="member-select-container">
+                        <select id="memberSelect" class="member-select">
+                            <option value="">Choose a member...</option>
+                        </select>
+                        <button id="generateMatchesBtn" class="generate-matches-btn" disabled>
+                            Generate Matches
+                        </button>
+                    </div>
+                    <div class="member-info" id="memberInfo" style="display: none;">
+                        <div class="member-details">
+                            <h4 id="selectedMemberName"></h4>
+                            <p id="selectedMemberCompany"></p>
+                            <p id="selectedMemberGoals"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Insert before matches container
+        resultsSection.insertAdjacentHTML('afterbegin', memberSelectionHTML);
+        
+        // Populate member dropdown
+        this.populateMemberDropdown();
+        
+        // Add event listeners
+        this.initializeMemberSelectionEvents();
+    }
+
+    populateMemberDropdown() {
+        const memberSelect = document.getElementById('memberSelect');
+        const validMembers = this.members.filter(member => 
+            member['First Name'] && member['Last Name'] && 
+            (member['Professional Goals'] || member['Company Goals'] || member['Industry'])
+        );
+        
+        // Sort members alphabetically
+        validMembers.sort((a, b) => {
+            const nameA = `${a['First Name']} ${a['Last Name']}`;
+            const nameB = `${b['First Name']} ${b['Last Name']}`;
+            return nameA.localeCompare(nameB);
+        });
+        
+        validMembers.forEach(member => {
+            const option = document.createElement('option');
+            option.value = `${member['First Name']}_${member['Last Name']}`;
+            option.textContent = `${member['First Name']} ${member['Last Name']} - ${this.getCompany(member) || 'No Company'}`;
+            memberSelect.appendChild(option);
+        });
+        
+        // Auto-select the first member if available
+        if (validMembers.length > 0) {
+            memberSelect.value = `${validMembers[0]['First Name']}_${validMembers[0]['Last Name']}`;
+            this.selectedMember = validMembers[0];
+            this.displaySelectedMemberInfo();
+            document.getElementById('generateMatchesBtn').disabled = false;
+        }
+    }
+
+    initializeMemberSelectionEvents() {
+        const memberSelect = document.getElementById('memberSelect');
+        const generateMatchesBtn = document.getElementById('generateMatchesBtn');
+        const memberInfo = document.getElementById('memberInfo');
+        
+        memberSelect.addEventListener('change', (e) => {
+            if (e.target.value) {
+                this.selectedMember = this.members.find(member => 
+                    `${member['First Name']}_${member['Last Name']}` === e.target.value
+                );
+                this.displaySelectedMemberInfo();
+                generateMatchesBtn.disabled = false;
+            } else {
+                this.selectedMember = null;
+                memberInfo.style.display = 'none';
+                generateMatchesBtn.disabled = true;
+            }
+        });
+        
+        generateMatchesBtn.addEventListener('click', () => {
+            if (this.selectedMember) {
+                this.generateMatchesForSelectedMember();
+            }
+        });
+    }
+
+    displaySelectedMemberInfo() {
+        const memberInfo = document.getElementById('memberInfo');
+        const selectedMemberName = document.getElementById('selectedMemberName');
+        const selectedMemberCompany = document.getElementById('selectedMemberCompany');
+        const selectedMemberGoals = document.getElementById('selectedMemberGoals');
+        
+        selectedMemberName.textContent = `${this.selectedMember['First Name']} ${this.selectedMember['Last Name']}`;
+        selectedMemberCompany.textContent = this.getCompany(this.selectedMember) || 'No Company';
+        selectedMemberGoals.textContent = this.selectedMember['Professional Goals'] || this.selectedMember['Company Goals'] || 'No goals specified';
+        
+        memberInfo.style.display = 'block';
+    }
+
+    generateMatchesForSelectedMember() {
+        this.showLoading();
+        setTimeout(() => {
+            const rawMatches = this.findMatchesForSelectedMember();
+            this.matches = this.applyMemberQuota(rawMatches);
+            this.hideLoading();
+            this.displayMatches();
+        }, 300);
+    }
+
+    findMatchesForSelectedMember() {
+        const matches = [];
+        const validMembers = this.members.filter(member => 
+            member['First Name'] && member['Last Name'] && 
+            (member['Professional Goals'] || member['Company Goals'] || member['Industry']) &&
+            member !== this.selectedMember // Exclude selected member from potential matches
+        );
+        
+        // RANDOMIZE member order to get different people each time
+        const shuffledMembers = [...validMembers].sort(() => Math.random() - 0.5);
+        
+        // Limit to top 200 for performance when matching one member
+        const membersToProcess = shuffledMembers.length > 200 ? shuffledMembers.slice(0, 200) : shuffledMembers;
+        
+        for (const potentialMatch of membersToProcess) {
+            // Skip if same company
+            if (this.getCompany(this.selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(this.selectedMember) !== '') {
+                continue;
+            }
+            
+            const matchScore = this.calculateMatchScore(this.selectedMember, potentialMatch);
+            
+            // Only include matches with decent scores
+            if (matchScore >= 0.05) {
+                matches.push({
+                    member1: this.selectedMember,
+                    member2: potentialMatch,
+                    score: matchScore,
+                    explanation: this.generateMatchExplanation(this.selectedMember, potentialMatch)
+                });
+            }
+        }
+        
+        // Sort by score descending with some randomization for variety
+        const sortedMatches = matches.sort((a, b) => {
+            const scoreDiff = b.score - a.score;
+            const randomFactor = (Math.random() - 0.5) * 0.02;
+            return scoreDiff + randomFactor;
+        });
+        
+        // Limit to top 100 matches for one-member matching
+        return sortedMatches.slice(0, 100);
     }
 
     initializeEventListeners() {
@@ -426,7 +587,26 @@ class MemberMatcher {
         container.innerHTML = '';
         
         if (this.matches.length === 0) {
-            container.innerHTML = `<div class="no-matches"><h3>No matches found</h3></div>`;
+            // Show all members as a fallback
+            let membersHtml = '<h3>All Members</h3><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">';
+            this.members.slice(0, 20).forEach(member => {
+                membersHtml += `
+                    <div style="background: #23243A; padding: 20px; border-radius: 12px; border: 1px solid #A18CD1;">
+                        <h4>${member['First Name']} ${member['Last Name']}</h4>
+                        <p>${member['Company Goals'] || member['Professional Goals'] || 'No goals specified'}</p>
+                        <p>${member['Industry'] || 'No industry specified'}</p>
+                    </div>
+                `;
+            });
+            membersHtml += '</div>';
+            
+            container.innerHTML = `
+                <div class="no-matches">
+                    <h3>No matches found</h3>
+                    <p>Showing all members instead:</p>
+                    ${membersHtml}
+                </div>
+            `;
             paginationControls.style.display = 'none';
         } else {
             // Show only the first 4 matches initially
@@ -623,13 +803,32 @@ window.addEventListener('DOMContentLoaded', () => {
 
     // Helper to load matcher from CSV text
     function loadMatcherFromCsv(text) {
+        console.log('Loading matcher from CSV...');
         const matcher = new MemberMatcher();
         matcher.members = matcher.parseCSV(text);
+        console.log(`Matcher initialized with ${matcher.members.length} members`);
+        
+        // Show immediate feedback
+        if (matcher.members.length === 0) {
+            alert('No members found in CSV. Please check your file format.');
+            return;
+        }
+        
         window.matcher = matcher; // for debugging
         csvUploadSection.style.display = 'none';
         mainAppContainer.style.display = '';
         changeCsvBtn.style.display = ''; // Show the Change CSV button
+        
+        // Force show the results section immediately
+        document.getElementById('resultsSection').style.display = 'block';
+        
         matcher.initializeApp();
+        
+        // Auto-generate matches immediately
+        setTimeout(() => {
+            matcher.generateMatchesForSelectedMember();
+        }, 100);
+        
         if (window.lucide) {
             lucide.createIcons();
         }

@@ -4,17 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GLO Introduction Engine</title>
-    <meta name="description" content="GLO Introduction Engine - Generate 25 targeted introductions across 4 categories with commission potential">
-    <meta name="keywords" content="GLO, introductions, networking, commission, investors, founders, GTM">
-    <meta name="author" content="GLO Introduction Engine">
-
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" href="favicon.png">
-    
-    <!-- Stylesheets -->
     <link rel="stylesheet" href="styles.css">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
     <style>
         /* GLO-specific styles */
         .upload-section {
@@ -34,14 +24,7 @@
         
         .upload-card h2 {
             color: #FBC2EB;
-            margin-bottom: 10px;
-        }
-        
-        .upload-subtitle {
-            color: #B0B3C6;
-            font-size: 0.95rem;
             margin-bottom: 20px;
-            text-align: center;
         }
         
         .upload-button {
@@ -160,84 +143,6 @@
             gap: 20px;
         }
         
-        .commission-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-        }
-        
-        /* Mobile optimizations */
-        @media (max-width: 768px) {
-            .container {
-                padding: 0 1rem;
-                margin: 1rem auto;
-            }
-            
-            .upload-card {
-                padding: 25px 20px;
-                margin: 0 10px;
-            }
-            
-            .member-select {
-                min-width: auto;
-                width: 100%;
-                max-width: 300px;
-            }
-            
-            .introductions-list {
-                grid-template-columns: 1fr;
-                gap: 15px;
-            }
-            
-            .introduction-card {
-                padding: 20px;
-            }
-            
-            .commission-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-            }
-            
-            .intro-header {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 10px;
-            }
-            
-            .intro-actions {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
-            }
-            
-            .action-btn {
-                margin-right: 0;
-                text-align: center;
-            }
-            
-            .member-card {
-                margin: 0 10px;
-            }
-        }
-        
-        @media (max-width: 480px) {
-            .upload-card {
-                padding: 20px 15px;
-            }
-            
-            .introduction-card {
-                padding: 15px;
-            }
-            
-            .member-card {
-                padding: 20px;
-            }
-            
-            .commission-summary {
-                padding: 20px;
-            }
-        }
-        
         .introduction-card {
             background: #23243A;
             border-radius: 16px;
@@ -343,117 +248,10 @@
             color: #B0B3C6;
             font-size: 1.1rem;
         }
-        
-        .change-csv-btn {
-            background: none;
-            border: none;
-            color: #FBC2EB;
-            font-size: 0.98rem;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 4px 12px;
-            border-radius: 16px;
-            transition: background 0.18s, color 0.18s;
-            margin-left: 2px;
-        }
-        
-        .change-csv-btn:hover {
-            background: #23243A;
-            color: #A18CD1;
-        }
-        
-        .instructions-btn {
-            background: none;
-            border: none;
-            color: #A18CD1;
-            font-size: 0.98rem;
-            font-weight: 600;
-            cursor: pointer;
-            padding: 4px 12px;
-            border-radius: 16px;
-            transition: background 0.18s, color 0.18s;
-        }
-        
-        .instructions-btn:hover {
-            background: #23243A;
-            color: #FBC2EB;
-        }
-        
-        .instructions-modal {
-            display: none;
-            position: fixed;
-            z-index: 1000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(4px);
-        }
-        
-        .instructions-content {
-            background: #23243A;
-            margin: 5% auto;
-            padding: 30px;
-            border-radius: 20px;
-            border: 1px solid #A18CD1;
-            width: 90%;
-            max-width: 500px;
-            position: relative;
-        }
-        
-        .instructions-content h2 {
-            color: #FBC2EB;
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        .instructions-content ol {
-            color: #e0e0e0;
-            line-height: 1.6;
-            padding-left: 20px;
-        }
-        
-        .instructions-content li {
-            margin-bottom: 12px;
-        }
-        
-        .instructions-content strong {
-            color: #A18CD1;
-        }
-        
-        .close-instructions {
-            position: absolute;
-            top: 15px;
-            right: 20px;
-            color: #B0B3C6;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        
-        .close-instructions:hover {
-            color: #FBC2EB;
-        }
     </style>
 </head>
 <body>
-    <!-- Top Header Bar -->
-    <div class="top-header-bar">
-        <div class="glo-logo-corner">
-            <a href="https://joinglocommunity.com/" target="_blank">
-                <img src="favicon.png" alt="GLO Favicon" class="glo-logo-img">
-            </a>
-        </div>
-        <div style="display: flex; align-items: center; gap: 18px;">
-            <button id="instructionsBtn" class="instructions-btn" type="button">Instructions</button>
-            <button id="changeCsvBtn" class="change-csv-btn" type="button" style="display: none;">Change CSV</button>
-            <div class="version-badge">v1.1</div>
-        </div>
-    </div>
-
-        <div class="container">
+    <div class="container">
         <header class="header">
             <h1 class="logo">GLO Introduction Engine</h1>
             <p class="subtitle">Generate 25 targeted introductions across 4 categories with commission potential</p>
@@ -462,24 +260,7 @@
         <!-- Content will be dynamically generated by JavaScript -->
     </div>
     
-    <!-- Instructions Modal -->
-    <div id="instructionsModal" class="instructions-modal">
-        <div class="instructions-content">
-            <span class="close-instructions">&times;</span>
-            <h2>How to Use</h2>
-            <ol>
-                <li><strong>Download CSV from Airtable:</strong> Export your GLO members data as a CSV file from Airtable</li>
-                <li><strong>Upload to this site:</strong> Click "Choose CSV File" and select your downloaded CSV</li>
-                <li><strong>Select a member:</strong> Choose which member you want to generate introductions for</li>
-                <li><strong>Generate matches:</strong> Click "Generate Best Matches" to see targeted introductions</li>
-            </ol>
-        </div>
-    </div>
-
     <script src="glo-matcher.js"></script>
     <script src="glo-ui.js"></script>
 </body>
-</html> 
-</html> 
-</html> 
 </html> 
