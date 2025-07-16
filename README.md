@@ -14,6 +14,16 @@ The GLO Introduction Engine is a client-side web application that:
 - Tracks commission potential for each introduction
 - Provides a clean, mobile-responsive interface
 
+### Business Framework
+The application is built around the **GLO Introduction Framework** (`glo_intro_framework.md`), which defines:
+- The 4 introduction categories and their purposes
+- Commission structure and revenue potential
+- Member information templates
+- Introduction strategy guidelines
+- AI prompt optimization for high-value matches
+
+**Important**: Always refer to `glo_intro_framework.md` when modifying the matching algorithm or adding new features to ensure alignment with GLO's business model and commission structure.
+
 ## 🏗️ Architecture
 
 ### Frontend-Only Application
@@ -22,13 +32,14 @@ This is a **static web application** that runs entirely in the browser. No serve
 ### Key Files Structure
 ```
 matching-mvp/
-├── index.html          # Main HTML file with UI structure
-├── styles.css          # All styling and responsive design
-├── glo-ui.js           # UI management and user interactions
-├── glo-matcher.js      # Core matching algorithm and business logic
-├── app.js              # Express server (for local development only)
-├── package.json        # Dependencies and scripts
-└── _redirects          # Cloudflare Pages routing configuration
+├── index.html                    # Main HTML file with UI structure
+├── styles.css                    # All styling and responsive design
+├── glo-ui.js                     # UI management and user interactions
+├── glo-matcher.js                # Core matching algorithm and business logic
+├── glo_intro_framework.md        # Business framework and commission structure
+├── app.js                        # Express server (for local development only)
+├── package.json                  # Dependencies and scripts
+└── _redirects                    # Cloudflare Pages routing configuration
 ```
 
 ## 🧠 Core Components
@@ -133,6 +144,15 @@ The app is designed for static hosting on Cloudflare Pages:
 2. **Deploy**: Push to main branch triggers automatic deployment
 3. **Domain**: Available at `https://glo-members-matcher.pages.dev`
 
+## 🔒 Repository Security
+
+**Important**: This repository is currently **public**. As development progresses and the application handles sensitive business data, consider:
+
+- Making the repository **private** to protect business logic and member data
+- Implementing proper access controls for team members
+- Reviewing what information is exposed in commits and documentation
+- Ensuring no sensitive data (API keys, member information) is committed to the repository
+
 ## 🔧 Key Features for Developers
 
 ### 1. CSV Processing
@@ -175,16 +195,20 @@ The app is designed for static hosting on Cloudflare Pages:
 ## 🔄 Making Changes
 
 ### Adding New Introduction Categories
-1. Update `generateIntroductions()` in `glo-matcher.js`
-2. Add category to the categories object
-3. Update UI display logic in `glo-ui.js`
-4. Add corresponding CSS styles
+1. **First, review `glo_intro_framework.md`** to understand if the category aligns with business goals
+2. Update `generateIntroductions()` in `glo-matcher.js`
+3. Add category to the categories object
+4. Update UI display logic in `glo-ui.js`
+5. Add corresponding CSS styles
+6. Update commission calculation logic
 
 ### Modifying Matching Algorithm
-1. Edit `calculateMatchScore()` method
-2. Adjust weight factors for different criteria
-3. Test with sample data
-4. Update scoring logic as needed
+1. **First, review `glo_intro_framework.md`** to understand business requirements
+2. Edit `calculateMatchScore()` method
+3. Adjust weight factors for different criteria
+4. Test with sample data
+5. Update scoring logic as needed
+6. Ensure alignment with commission structure and business goals
 
 ### UI/UX Improvements
 1. Modify styles in `styles.css`
@@ -285,4 +309,21 @@ The app is designed for static hosting on Cloudflare Pages:
 
 **Last Updated**: December 2024  
 **Version**: 1.1  
-**Maintainer**: GLO Development Team 
+**Maintainer**: GLO Development Team  
+**Primary Developer**: fareeha-s (contact for technical support and questions)
+
+## 💬 Getting Help
+
+If you need assistance with this codebase or have questions about implementation:
+
+- **Contact**: fareeha-s (GitHub username)
+- **Development Environment**: This project was built entirely on Cursor IDE
+- **Code Style**: Follows Cursor's AI-assisted development patterns and best practices
+
+## 🛠️ Development Environment
+
+This project was developed using **Cursor IDE** with AI assistance. The codebase follows Cursor's development patterns and conventions. When working on this project:
+
+- Use Cursor IDE for the best development experience
+- Leverage AI assistance for code generation and debugging
+- Follow the established patterns and conventions in the codebase 
