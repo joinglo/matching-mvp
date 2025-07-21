@@ -60,19 +60,41 @@ class GLOIntroductionMatcher {
     // Generate 25 targeted introductions for a member
     generateIntroductions(targetMember) {
         this.introductions = [];
-        
-        // Get potential matches for each category
-        const highTractionMatches = this.findHighTractionMatches(targetMember);
-        const investorMatches = this.findInvestorMatches(targetMember);
-        const gtmMatches = this.findGTMMatches(targetMember);
-        const serviceMatches = this.findServiceMatches(targetMember);
-        
-        // Generate 6-7 intros per category (25 total)
-        this.addCategoryIntroductions(highTractionMatches, this.categories.HIGH_TRACTION_FOUNDERS, 6);
-        this.addCategoryIntroductions(investorMatches, this.categories.ACTIVE_INVESTORS, 7);
-        this.addCategoryIntroductions(gtmMatches, this.categories.STRATEGIC_GTM, 6);
-        this.addCategoryIntroductions(serviceMatches, this.categories.SERVICE_PROVIDERS, 6);
-        
+        const CATEGORY_TARGETS = [6, 7, 6, 6]; // 25 total
+        const categoryKeys = [
+            this.categories.HIGH_TRACTION_FOUNDERS,
+            this.categories.ACTIVE_INVESTORS,
+            this.categories.STRATEGIC_GTM,
+            this.categories.SERVICE_PROVIDERS
+        ];
+        const finders = [
+            this.findHighTractionMatches.bind(this),
+            this.findInvestorMatches.bind(this),
+            this.findGTMMatches.bind(this),
+            this.findServiceMatches.bind(this)
+        ];
+
+        let introId = 1;
+        for (let i = 0; i < 4; i++) {
+            const matches = finders[i](targetMember);
+            const category = categoryKeys[i];
+            const targetCount = CATEGORY_TARGETS[i];
+            // Only add real matches, up to the target count
+            for (let j = 0; j < Math.min(matches.length, targetCount); j++) {
+                const match = matches[j];
+                this.introductions.push({
+                    id: introId++,
+                    contact: `${match['First Name']} ${match['Last Name']}`,
+                    company: match['Company Website'] || match['Company'] || 'Company TBD',
+                    category: category,
+                    rationale: this.generateRationale(match, category),
+                    value: this.generateValue(match, category),
+                    email: match['Email'] || '',
+                    linkedin: match['LinkedIn Profile'] || '',
+                    score: this.calculateMatchScore(targetMember, match, category)
+                });
+            }
+        }
         return this.introductions;
     }
 
@@ -243,6 +265,35 @@ class GLOIntroductionMatcher {
             default:
                 return 'Mutual value creation with commission potential.';
         }
+    }
+
+    // Calculate a match score (0-1) for a suggested match
+    calculateMatchScore(member1, member2, category) {
+        let score = 0;
+        let total = 0;
+        // Score on industry
+        total++;
+        if ((member1['Industry'] || '').toLowerCase() && (member2['Industry'] || '').toLowerCase() && (member1['Industry'] || '').toLowerCase() === (member2['Industry'] || '').toLowerCase()) score++;
+        // Score on company stage
+        total++;
+        if ((member1['Company Stage'] || '').toLowerCase() && (member2['Company Stage'] || '').toLowerCase() && (member1['Company Stage'] || '').toLowerCase() === (member2['Company Stage'] || '').toLowerCase()) score++;
+        // Score on goals
+        total++;
+        if ((member1['Professional Goals'] || '').toLowerCase() && (member2['Professional Goals'] || '').toLowerCase() && (member1['Professional Goals'] || '').toLowerCase() === (member2['Professional Goals'] || '').toLowerCase()) score++;
+        // Score on intro preferences
+        total++;
+        if ((member1['Intro Preferences'] || '').toLowerCase() && (member2['Intro Preferences'] || '').toLowerCase() && (member1['Intro Preferences'] || '').toLowerCase() === (member2['Intro Preferences'] || '').toLowerCase()) score++;
+        // Score on location
+        total++;
+        if ((member1['Based In'] || '').toLowerCase() && (member2['Based In'] || '').toLowerCase() && (member1['Based In'] || '').toLowerCase() === (member2['Based In'] || '').toLowerCase()) score++;
+        // Score on category-specific logic
+        total++;
+        if (category === this.categories.ACTIVE_INVESTORS && (member2['Investor Type'] || '').toLowerCase().includes('investor')) score++;
+        if (category === this.categories.HIGH_TRACTION_FOUNDERS && (member2['Role'] || '').toLowerCase().includes('founder')) score++;
+        if (category === this.categories.STRATEGIC_GTM && (member2['Role'] || '').toLowerCase().includes('gtm')) score++;
+        if (category === this.categories.SERVICE_PROVIDERS && (member2['Role'] || '').toLowerCase().includes('legal')) score++;
+        // Normalize score
+        return Math.round((score / total) * 100) / 100;
     }
 
     // Get all members

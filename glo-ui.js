@@ -230,6 +230,7 @@ class GLOIntroductionUI {
                                 <span class="intro-id">#${intro.id}</span>
                             </div>
                             <p class="intro-company">${intro.company}</p>
+                            <p class="intro-score"><strong>Score:</strong> ${typeof intro.score === 'number' ? intro.score.toFixed(2) : 'N/A'}</p>
                             <p class="intro-rationale"><strong>Why:</strong> ${intro.rationale}</p>
                             <p class="intro-value"><strong>Value:</strong> ${intro.value}</p>
                             <div class="intro-actions">
