@@ -98,6 +98,36 @@ body {
     padding: 10px;
 }
 
+/* Match Score Styling */
+.match-score {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 8px 16px;
+    background: rgba(161, 140, 209, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(161, 140, 209, 0.3);
+}
+
+.score-label {
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #A18CD1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.score-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #FBC2EB;
+    background: linear-gradient(90deg, #A18CD1 0%, #FBC2EB 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
 .generate-matches-btn {
     background: linear-gradient(90deg, #FFB86C 0%, #FF7E5F 100%);
     color: #23243A;

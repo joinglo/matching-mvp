@@ -180,6 +180,46 @@ class MemberMatcher {
         // Limit to top 200 for performance when matching one member
         const membersToProcess = shuffledMembers.length > 200 ? shuffledMembers.slice(0, 200) : shuffledMembers;
         
+        // FAIL-SAFE MATCHING: Try multiple tiers to ensure minimum matches
+        const minMatches = 5;
+        const targetMatches = 8;
+        
+        // Tier 1: Standard criteria (score >= 0.05)
+        const tier1Matches = this.findMatchesByTier(membersToProcess, 0.05, 'standard');
+        
+        // Tier 2: Relaxed criteria if we don't have enough (score >= 0.03)
+        let allMatches = [...tier1Matches];
+        if (allMatches.length < minMatches) {
+            const tier2Matches = this.findMatchesByTier(membersToProcess, 0.03, 'relaxed');
+            allMatches = this.mergeTiers(allMatches, tier2Matches);
+        }
+        
+        // Tier 3: Safety net - ensure we have minimum matches (score >= 0.01)
+        if (allMatches.length < minMatches) {
+            const tier3Matches = this.findMatchesByTier(membersToProcess, 0.01, 'safety');
+            allMatches = this.mergeTiers(allMatches, tier3Matches);
+        }
+        
+        // Apply smart score normalization to ensure all scores are in 65-85% range
+        allMatches.forEach(match => {
+            match.score = this.normalizeScore(match.score, match.tier);
+        });
+        
+        // Sort by score descending with some randomization for variety
+        const sortedMatches = allMatches.sort((a, b) => {
+            const scoreDiff = b.score - a.score;
+            const randomFactor = (Math.random() - 0.5) * 0.02;
+            return scoreDiff + randomFactor;
+        });
+        
+        // Return top matches, ensuring minimum but not too many
+        const finalCount = Math.min(Math.max(sortedMatches.length, minMatches), 25);
+        return sortedMatches.slice(0, finalCount);
+    }
+
+    findMatchesByTier(membersToProcess, minScore, tier) {
+        const matches = [];
+        
         for (const potentialMatch of membersToProcess) {
             // Skip if same company
             if (this.getCompany(this.selectedMember) === this.getCompany(potentialMatch) && 
@@ -187,28 +227,346 @@ class MemberMatcher {
                 continue;
             }
             
-            const matchScore = this.calculateMatchScore(this.selectedMember, potentialMatch);
+            let matchScore;
+            if (tier === 'safety') {
+                // Safety tier: more lenient matching
+                matchScore = this.calculateSafetyTierScore(this.selectedMember, potentialMatch);
+            } else if (tier === 'relaxed') {
+                // Relaxed tier: moderately lenient
+                matchScore = this.calculateRelaxedTierScore(this.selectedMember, potentialMatch);
+            } else {
+                // Standard tier: normal calculation
+                matchScore = this.calculateMatchScore(this.selectedMember, potentialMatch);
+            }
             
-            // Only include matches with decent scores
-            if (matchScore >= 0.05) {
+            if (matchScore >= minScore) {
                 matches.push({
                     member1: this.selectedMember,
                     member2: potentialMatch,
                     score: matchScore,
-                    explanation: this.generateMatchExplanation(this.selectedMember, potentialMatch)
+                    tier: tier,
+                    explanation: this.generateEnhancedMatchExplanation(this.selectedMember, potentialMatch, tier)
                 });
             }
         }
         
-        // Sort by score descending with some randomization for variety
-        const sortedMatches = matches.sort((a, b) => {
-            const scoreDiff = b.score - a.score;
-            const randomFactor = (Math.random() - 0.5) * 0.02;
-            return scoreDiff + randomFactor;
+        return matches;
+    }
+
+    mergeTiers(existingMatches, newMatches) {
+        const existingIds = new Set(existingMatches.map(m => 
+            `${m.member2['First Name']}_${m.member2['Last Name']}`
+        ));
+        
+        const uniqueNewMatches = newMatches.filter(m => 
+            !existingIds.has(`${m.member2['First Name']}_${m.member2['Last Name']}`)
+        );
+        
+        return [...existingMatches, ...uniqueNewMatches];
+    }
+
+    calculateRelaxedTierScore(member1, member2) {
+        let score = 0;
+        let factors = 0;
+        
+        // More lenient goal matching (35% weight)
+        const goalScore = this.calculateRelaxedGoalScore(member1, member2);
+        score += goalScore * 0.35;
+        factors++;
+        
+        // Industry alignment with broader categories (25% weight)
+        const industryScore = this.calculateBroadIndustryAlignment(member1, member2);
+        score += industryScore * 0.25;
+        factors++;
+        
+        // Stage similarity (20% weight)
+        const stageScore = this.calculateStageAlignment(member1, member2);
+        score += stageScore * 0.2;
+        factors++;
+        
+        // Geographic or business model similarity (20% weight)
+        const contextScore = this.calculateContextualAlignment(member1, member2);
+        score += contextScore * 0.2;
+        factors++;
+        
+        return factors > 0 ? score / factors : 0;
+    }
+
+    calculateSafetyTierScore(member1, member2) {
+        let score = 0.4; // Base score to ensure decent match quality
+        let factors = 1;
+        
+        // Any shared characteristic gets points
+        if (this.hasAnySharedCharacteristic(member1, member2)) {
+            score += 0.3;
+        }
+        
+        // Learning opportunity boost
+        if (this.isLearningOpportunity(member1, member2)) {
+            score += 0.2;
+        }
+        
+        // Geographic expansion opportunity
+        if (this.isGeographicExpansionOpportunity(member1, member2)) {
+            score += 0.15;
+        }
+        
+        return Math.min(score, 0.85); // Cap at reasonable level
+    }
+
+    calculateRelaxedGoalScore(member1, member2) {
+        const goals1 = this.extractGoals(member1);
+        const goals2 = this.extractGoals(member2);
+        
+        // If no goals, give a decent score instead of low score
+        if (goals1.length === 0 && goals2.length === 0) return 0.7;
+        if (goals1.length === 0 || goals2.length === 0) return 0.6;
+        
+        // Broader complementary goal matching
+        const broadComplementaryPairs = [
+            ['fundraising', 'investor'], ['fundraising', 'funding'], ['fundraising', 'capital'],
+            ['sales', 'growth'], ['sales', 'gtm'], ['sales', 'marketing'],
+            ['growth', 'expansion'], ['growth', 'scaling'], ['growth', 'user'],
+            ['network', 'hiring'], ['network', 'partnership'], ['network', 'collaboration'],
+            ['brand', 'marketing'], ['brand', 'awareness'], ['brand', 'user']
+        ];
+        
+        let maxScore = 0;
+        for (const [goal1, goal2] of broadComplementaryPairs) {
+            const hasGoal1 = goals1.some(g => g.includes(goal1));
+            const hasGoal2 = goals2.some(g => g.includes(goal2));
+            if (hasGoal1 && hasGoal2) {
+                maxScore = Math.max(maxScore, 0.9);
+            }
+        }
+        
+        // Check for any goal overlap
+        const overlap = goals1.filter(goal => 
+            goals2.some(g2 => g2.includes(goal) || goal.includes(g2))
+        );
+        if (overlap.length > 0) {
+            maxScore = Math.max(maxScore, 0.8);
+        }
+        
+        return Math.max(maxScore, 0.5); // Minimum decent score
+    }
+
+    calculateBroadIndustryAlignment(member1, member2) {
+        const industry1 = (member1['Industry'] || '').toLowerCase();
+        const industry2 = (member2['Industry'] || '').toLowerCase();
+        
+        if (!industry1 || !industry2) return 0.6; // Neutral score for missing data
+        
+        // Broader industry categories
+        const broadCategories = [
+            ['tech', 'software', 'saas', 'ai', 'machine learning', 'data', 'analytics'],
+            ['finance', 'fintech', 'banking', 'investment', 'crypto', 'payment'],
+            ['healthcare', 'health tech', 'medical', 'biotech', 'wellness', 'fitness'],
+            ['ecommerce', 'retail', 'consumer', 'marketplace', 'shopping', 'commerce'],
+            ['education', 'edtech', 'learning', 'training', 'development'],
+            ['b2b', 'enterprise', 'business', 'corporate', 'professional'],
+            ['marketing', 'advertising', 'content', 'media', 'creative']
+        ];
+        
+        for (const category of broadCategories) {
+            const hasCategory1 = category.some(term => industry1.includes(term));
+            const hasCategory2 = category.some(term => industry2.includes(term));
+            if (hasCategory1 && hasCategory2) return 0.8;
+        }
+        
+        return 0.5; // Default score for different industries
+    }
+
+    calculateStageAlignment(member1, member2) {
+        const stage1 = (member1['Company Stage'] || '').toLowerCase();
+        const stage2 = (member2['Company Stage'] || '').toLowerCase();
+        
+        if (!stage1 || !stage2) return 0.6;
+        
+        // Group stages into broader categories
+        const stageGroups = [
+            ['pre-seed', 'seed', 'early'],
+            ['series a', 'series b', 'growth'],
+            ['series c', 'series d', 'late', 'mature']
+        ];
+        
+        for (const group of stageGroups) {
+            const inGroup1 = group.some(stage => stage1.includes(stage));
+            const inGroup2 = group.some(stage => stage2.includes(stage));
+            if (inGroup1 && inGroup2) return 0.8;
+        }
+        
+        return 0.5;
+    }
+
+    calculateContextualAlignment(member1, member2) {
+        let score = 0;
+        let factors = 0;
+        
+        // Geographic alignment
+        const location1 = (member1['Based In'] || '').toLowerCase();
+        const location2 = (member2['Based In'] || '').toLowerCase();
+        if (location1 && location2) {
+            factors++;
+            if (location1.includes(location2) || location2.includes(location1)) {
+                score += 0.8;
+            } else {
+                score += 0.4; // Different locations can be expansion opportunities
+            }
+        }
+        
+        // Business model similarity
+        const role1 = (member1['Role'] || '').toLowerCase();
+        const role2 = (member2['Role'] || '').toLowerCase();
+        if (role1 && role2) {
+            factors++;
+            if (role1.includes('founder') && role2.includes('founder')) {
+                score += 0.8; // Founder-to-founder connections are valuable
+            } else {
+                score += 0.5;
+            }
+        }
+        
+        return factors > 0 ? score / factors : 0.5;
+    }
+
+    hasAnySharedCharacteristic(member1, member2) {
+        const characteristics1 = this.extractAllCharacteristics(member1);
+        const characteristics2 = this.extractAllCharacteristics(member2);
+        
+        return characteristics1.some(char => characteristics2.includes(char));
+    }
+
+    extractAllCharacteristics(member) {
+        const characteristics = [];
+        
+        // Add all non-empty field values as characteristics
+        Object.keys(member).forEach(key => {
+            const value = (member[key] || '').toLowerCase().trim();
+            if (value && value !== 'n/a' && value !== 'none') {
+                characteristics.push(...value.split(/[,;]/).map(v => v.trim()));
+            }
         });
         
-        // Limit to top 100 matches for one-member matching
-        return sortedMatches.slice(0, 100);
+        return characteristics.filter(char => char.length > 2);
+    }
+
+    isLearningOpportunity(member1, member2) {
+        const industry1 = (member1['Industry'] || '').toLowerCase();
+        const industry2 = (member2['Industry'] || '').toLowerCase();
+        const stage1 = (member1['Company Stage'] || '').toLowerCase();
+        const stage2 = (member2['Company Stage'] || '').toLowerCase();
+        
+        // Different industries but similar stages = learning opportunity
+        return (industry1 !== industry2 && industry1 && industry2) ||
+               (stage1 !== stage2 && stage1 && stage2);
+    }
+
+    isGeographicExpansionOpportunity(member1, member2) {
+        const location1 = (member1['Based In'] || '').toLowerCase();
+        const location2 = (member2['Based In'] || '').toLowerCase();
+        
+        if (!location1 || !location2) return false;
+        
+        // Different locations = potential expansion opportunity
+        return !location1.includes(location2) && !location2.includes(location1);
+    }
+
+    normalizeScore(rawScore, tier) {
+        let minScore, maxScore;
+        
+        switch (tier) {
+            case 'standard':
+                minScore = 0.75;
+                maxScore = 0.90;
+                break;
+            case 'relaxed':
+                minScore = 0.68;
+                maxScore = 0.82;
+                break;
+            case 'safety':
+                minScore = 0.65;
+                maxScore = 0.78;
+                break;
+            default:
+                minScore = 0.65;
+                maxScore = 0.85;
+        }
+        
+        // Map raw score to target range
+        const normalizedScore = minScore + (rawScore * (maxScore - minScore));
+        return Math.min(Math.max(normalizedScore, minScore), maxScore);
+    }
+
+    generateEnhancedMatchExplanation(member1, member2, tier) {
+        const explanations = [];
+        
+        // Get standard explanation first
+        const baseExplanation = this.generateMatchExplanation(member1, member2);
+        if (baseExplanation && !baseExplanation.includes('Strong potential for collaboration')) {
+            explanations.push(baseExplanation);
+        }
+        
+        // Add tier-specific explanations
+        switch (tier) {
+            case 'relaxed':
+                explanations.push(this.generateRelaxedTierExplanation(member1, member2));
+                break;
+            case 'safety':
+                explanations.push(this.generateSafetyTierExplanation(member1, member2));
+                break;
+        }
+        
+        // Remove duplicates and empty explanations
+        const uniqueExplanations = [...new Set(explanations.filter(exp => exp && exp.trim()))];
+        
+        return uniqueExplanations.length > 0 
+            ? uniqueExplanations.join('. ')
+            : 'Valuable networking opportunity for knowledge sharing and potential collaboration.';
+    }
+
+    generateRelaxedTierExplanation(member1, member2) {
+        const explanations = [];
+        
+        // Geographic expansion
+        if (this.isGeographicExpansionOpportunity(member1, member2)) {
+            const location1 = member1['Based In'] || 'their region';
+            const location2 = member2['Based In'] || 'another region';
+            explanations.push(`Geographic expansion opportunity: ${location1} ↔ ${location2}`);
+        }
+        
+        // Learning opportunity
+        if (this.isLearningOpportunity(member1, member2)) {
+            explanations.push('Cross-industry learning and best practices sharing');
+        }
+        
+        // Stage mentorship
+        const stage1 = (member1['Company Stage'] || '').toLowerCase();
+        const stage2 = (member2['Company Stage'] || '').toLowerCase();
+        if (stage1 && stage2 && stage1 !== stage2) {
+            explanations.push('Stage-based mentorship and scaling insights');
+        }
+        
+        return explanations.join('. ');
+    }
+
+    generateSafetyTierExplanation(member1, member2) {
+        const explanations = [];
+        
+        // Always frame as valuable
+        const role1 = member1['Role'] || 'founder';
+        const role2 = member2['Role'] || 'founder';
+        
+        if (role1.toLowerCase().includes('founder') && role2.toLowerCase().includes('founder')) {
+            explanations.push('Fellow founder connection for peer support and shared experiences');
+        } else {
+            explanations.push('Strategic networking opportunity for business growth');
+        }
+        
+        // Add specific value propositions
+        explanations.push('Potential for partnership development and resource sharing');
+        
+        return explanations.join('. ');
     }
 
     initializeEventListeners() {
@@ -720,6 +1078,10 @@ class MemberMatcher {
                         <h3>
                             ${member1Display} <i data-lucide="handshake" class="handshake-outline"></i> ${member2Display}
                         </h3>
+                    </div>
+                    <div class="match-score">
+                        <span class="score-label">Match Score:</span>
+                        <span class="score-value">${Math.round(match.score * 100)}%</span>
                     </div>
                 </div>
                 <span class="intro-check-icon" style="display:none; position:absolute; top:16px; right:20px; z-index:2; cursor:pointer;">
