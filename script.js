@@ -57,13 +57,14 @@ class MemberMatcher {
         const memberSelectionHTML = `
             <div class="member-selection-section" id="memberSelectionSection">
                 <div class="member-selection-card">
-                    <h3>Select a Member to Generate Matches</h3>
+                    <h3>🎯 Enhanced Member Matchmaker</h3>
+                    <p class="selection-description">Select a member to generate <strong>25+ targeted matches</strong> with enhanced business value analysis, commission potential tracking, and cross-referenced profiles.</p>
                     <div class="member-select-container">
                         <select id="memberSelect" class="member-select">
                             <option value="">Choose a member...</option>
                         </select>
                         <button id="generateMatchesBtn" class="generate-matches-btn" disabled>
-                            Generate Matches
+                            🚀 Generate 25+ Matches
                         </button>
                     </div>
                     <div class="member-info" id="memberInfo" style="display: none;">
@@ -71,6 +72,15 @@ class MemberMatcher {
                             <h4 id="selectedMemberName"></h4>
                             <p id="selectedMemberCompany"></p>
                             <p id="selectedMemberGoals"></p>
+                        </div>
+                        <div class="matching-features">
+                            <div class="feature-list">
+                                <div class="feature-item">💼 Sales & GTM Opportunities</div>
+                                <div class="feature-item">💰 Fundraising & Investment Matches</div>
+                                <div class="feature-item">🎯 Client & Service Provider Connections</div>
+                                <div class="feature-item">🌍 Strategic Partnership Potential</div>
+                                <div class="feature-item">🧩 Skill & Experience Complementarity</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -170,51 +180,61 @@ class MemberMatcher {
         const matches = [];
         const validMembers = this.members.filter(member => 
             member['First Name'] && member['Last Name'] && 
-            (member['Professional Goals'] || member['Company Goals'] || member['Industry']) &&
             member !== this.selectedMember // Exclude selected member from potential matches
         );
         
         // RANDOMIZE member order to get different people each time
         const shuffledMembers = [...validMembers].sort(() => Math.random() - 0.5);
         
-        // Limit to top 200 for performance when matching one member
-        const membersToProcess = shuffledMembers.length > 200 ? shuffledMembers.slice(0, 200) : shuffledMembers;
+        // Process ALL members for comprehensive matching
+        const membersToProcess = shuffledMembers;
         
-        // FAIL-SAFE MATCHING: Try multiple tiers to ensure minimum matches
-        const minMatches = 5;
-        const targetMatches = 8;
+        // Enhanced matching with focus on business value and commission potential
+        const minMatches = 25; // Ensure at least 25 matches as requested
+        const targetMatches = 30;
         
-        // Tier 1: Standard criteria (score >= 0.05)
-        const tier1Matches = this.findMatchesByTier(membersToProcess, 0.05, 'standard');
+        // Tier 1: High business value matches (commission/sales/fundraising potential)
+        const tier1Matches = this.findBusinessValueMatches(membersToProcess);
         
-        // Tier 2: Relaxed criteria if we don't have enough (score >= 0.03)
+        // Tier 2: Industry and professional alignment matches
+        const tier2Matches = this.findIndustryAlignmentMatches(membersToProcess);
+        
+        // Tier 3: Strategic partnership potential matches
+        const tier3Matches = this.findStrategicPartnershipMatches(membersToProcess);
+        
+        // Tier 4: Complementary skills and collaboration matches
+        const tier4Matches = this.findComplementaryMatches(membersToProcess);
+        
+        // Tier 5: Safety net - broader matches to ensure minimum count
+        const tier5Matches = this.findBroaderMatches(membersToProcess);
+        
+        // Merge all tiers while avoiding duplicates
         let allMatches = [...tier1Matches];
-        if (allMatches.length < minMatches) {
-            const tier2Matches = this.findMatchesByTier(membersToProcess, 0.03, 'relaxed');
-            allMatches = this.mergeTiers(allMatches, tier2Matches);
-        }
+        allMatches = this.mergeTiers(allMatches, tier2Matches);
+        allMatches = this.mergeTiers(allMatches, tier3Matches);
+        allMatches = this.mergeTiers(allMatches, tier4Matches);
+        allMatches = this.mergeTiers(allMatches, tier5Matches);
         
-        // Tier 3: Safety net - ensure we have minimum matches (score >= 0.01)
-        if (allMatches.length < minMatches) {
-            const tier3Matches = this.findMatchesByTier(membersToProcess, 0.01, 'safety');
-            allMatches = this.mergeTiers(allMatches, tier3Matches);
-        }
-        
-        // Apply smart score normalization to ensure all scores are in 65-85% range
+        // Apply enhanced scoring based on business potential
         allMatches.forEach(match => {
-            match.score = this.normalizeScore(match.score, match.tier);
+            match.score = this.calculateEnhancedBusinessScore(match);
         });
         
-        // Sort by score descending with some randomization for variety
+        // Sort by business value and commission potential first
         const sortedMatches = allMatches.sort((a, b) => {
+            // Prioritize commission potential
+            const commissionDiff = (b.commissionPotential || 0) - (a.commissionPotential || 0);
+            if (Math.abs(commissionDiff) > 0.1) return commissionDiff;
+            
+            // Then by overall score
             const scoreDiff = b.score - a.score;
-            const randomFactor = (Math.random() - 0.5) * 0.02;
+            const randomFactor = (Math.random() - 0.5) * 0.01; // Small randomization
             return scoreDiff + randomFactor;
         });
         
-        // Return top matches, ensuring minimum but not too many
-        const finalCount = Math.min(Math.max(sortedMatches.length, minMatches), 25);
-        return sortedMatches.slice(0, finalCount);
+        // Ensure we have at least 25 matches
+        const finalCount = Math.max(sortedMatches.length, minMatches);
+        return sortedMatches.slice(0, Math.min(finalCount, 50)); // Cap at 50 for performance
     }
 
     findMatchesByTier(membersToProcess, minScore, tier) {
@@ -263,6 +283,137 @@ class MemberMatcher {
         );
         
         return [...existingMatches, ...uniqueNewMatches];
+    }
+
+    findBusinessValueMatches(membersToProcess) {
+        const matches = [];
+        const selectedMember = this.selectedMember;
+        
+        for (const potentialMatch of membersToProcess) {
+            if (this.getCompany(selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(selectedMember) !== '') continue;
+            
+            const businessValue = this.calculateBusinessValueScore(selectedMember, potentialMatch);
+            
+            if (businessValue.score >= 0.6) { // High business value threshold
+                matches.push({
+                    member1: selectedMember,
+                    member2: potentialMatch,
+                    score: businessValue.score,
+                    tier: 'business_value',
+                    commissionPotential: businessValue.commissionPotential,
+                    businessType: businessValue.type,
+                    explanation: this.generateBusinessValueExplanation(selectedMember, potentialMatch, businessValue)
+                });
+            }
+        }
+        
+        return matches;
+    }
+
+    findIndustryAlignmentMatches(membersToProcess) {
+        const matches = [];
+        const selectedMember = this.selectedMember;
+        
+        for (const potentialMatch of membersToProcess) {
+            if (this.getCompany(selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(selectedMember) !== '') continue;
+            
+            const industryScore = this.calculateEnhancedIndustryAlignment(selectedMember, potentialMatch);
+            
+            if (industryScore >= 0.4) {
+                matches.push({
+                    member1: selectedMember,
+                    member2: potentialMatch,
+                    score: industryScore,
+                    tier: 'industry_alignment',
+                    commissionPotential: 0.3,
+                    businessType: 'industry_synergy',
+                    explanation: this.generateIndustryAlignmentExplanation(selectedMember, potentialMatch)
+                });
+            }
+        }
+        
+        return matches;
+    }
+
+    findStrategicPartnershipMatches(membersToProcess) {
+        const matches = [];
+        const selectedMember = this.selectedMember;
+        
+        for (const potentialMatch of membersToProcess) {
+            if (this.getCompany(selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(selectedMember) !== '') continue;
+            
+            const partnershipScore = this.calculateStrategicPartnershipScore(selectedMember, potentialMatch);
+            
+            if (partnershipScore.score >= 0.3) {
+                matches.push({
+                    member1: selectedMember,
+                    member2: potentialMatch,
+                    score: partnershipScore.score,
+                    tier: 'strategic_partnership',
+                    commissionPotential: partnershipScore.commissionPotential,
+                    businessType: partnershipScore.type,
+                    explanation: this.generatePartnershipExplanation(selectedMember, potentialMatch, partnershipScore)
+                });
+            }
+        }
+        
+        return matches;
+    }
+
+    findComplementaryMatches(membersToProcess) {
+        const matches = [];
+        const selectedMember = this.selectedMember;
+        
+        for (const potentialMatch of membersToProcess) {
+            if (this.getCompany(selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(selectedMember) !== '') continue;
+            
+            const complementaryScore = this.calculateComplementarySkillsScore(selectedMember, potentialMatch);
+            
+            if (complementaryScore >= 0.2) {
+                matches.push({
+                    member1: selectedMember,
+                    member2: potentialMatch,
+                    score: complementaryScore,
+                    tier: 'complementary',
+                    commissionPotential: 0.2,
+                    businessType: 'skill_complement',
+                    explanation: this.generateComplementaryExplanation(selectedMember, potentialMatch)
+                });
+            }
+        }
+        
+        return matches;
+    }
+
+    findBroaderMatches(membersToProcess) {
+        const matches = [];
+        const selectedMember = this.selectedMember;
+        
+        for (const potentialMatch of membersToProcess) {
+            if (this.getCompany(selectedMember) === this.getCompany(potentialMatch) && 
+                this.getCompany(selectedMember) !== '') continue;
+            
+            // Basic compatibility check - any shared characteristics
+            const basicScore = this.calculateBasicCompatibility(selectedMember, potentialMatch);
+            
+            if (basicScore >= 0.1) {
+                matches.push({
+                    member1: selectedMember,
+                    member2: potentialMatch,
+                    score: basicScore,
+                    tier: 'broader',
+                    commissionPotential: 0.1,
+                    businessType: 'networking',
+                    explanation: this.generateBasicExplanation(selectedMember, potentialMatch)
+                });
+            }
+        }
+        
+        return matches;
     }
 
     calculateRelaxedTierScore(member1, member2) {
@@ -870,6 +1021,260 @@ class MemberMatcher {
         return 0.3;
     }
 
+    calculateBusinessValueScore(member1, member2) {
+        let score = 0;
+        let commissionPotential = 0;
+        let businessType = 'networking';
+        
+        // Extract business information
+        const goals1 = this.extractAllBusinessGoals(member1);
+        const goals2 = this.extractAllBusinessGoals(member2);
+        const stage1 = this.getCompanyStage(member1);
+        const stage2 = this.getCompanyStage(member2);
+        const role1 = this.getRole(member1);
+        const role2 = this.getRole(member2);
+        
+        // High-value commission opportunities
+        
+        // 1. Fundraising + Investor match (highest commission potential)
+        if (this.isFundraising(goals1) && this.isInvestor(goals2, role2)) {
+            score = 1.0;
+            commissionPotential = 1.0;
+            businessType = 'fundraising_investor';
+        } else if (this.isFundraising(goals2) && this.isInvestor(goals1, role1)) {
+            score = 1.0;
+            commissionPotential = 1.0;
+            businessType = 'fundraising_investor';
+        }
+        
+        // 2. Sales/GTM + Strategic Partner match
+        else if (this.needsSalesGTM(goals1) && this.canProvideGTM(goals2, role2)) {
+            score = 0.9;
+            commissionPotential = 0.8;
+            businessType = 'sales_gtm_partner';
+        } else if (this.needsSalesGTM(goals2) && this.canProvideGTM(goals1, role1)) {
+            score = 0.9;
+            commissionPotential = 0.8;
+            businessType = 'sales_gtm_partner';
+        }
+        
+        // 3. B2B Founder + Potential Client match
+        else if (this.isB2BFounder(member1) && this.isPotentialClient(member1, member2)) {
+            score = 0.85;
+            commissionPotential = 0.7;
+            businessType = 'founder_client';
+        } else if (this.isB2BFounder(member2) && this.isPotentialClient(member2, member1)) {
+            score = 0.85;
+            commissionPotential = 0.7;
+            businessType = 'founder_client';
+        }
+        
+        // 4. Same industry, different stages (mentorship/guidance value)
+        else if (this.hasSameIndustry(member1, member2) && this.hasComplementaryStages(stage1, stage2)) {
+            score = 0.75;
+            commissionPotential = 0.4;
+            businessType = 'industry_mentorship';
+        }
+        
+        // 5. Service provider + service needs match
+        else if (this.isServiceProvider(member1) && this.needsServices(member2)) {
+            score = 0.8;
+            commissionPotential = 0.6;
+            businessType = 'service_provider';
+        } else if (this.isServiceProvider(member2) && this.needsServices(member1)) {
+            score = 0.8;
+            commissionPotential = 0.6;
+            businessType = 'service_provider';
+        }
+        
+        return { score, commissionPotential, type: businessType };
+    }
+
+    calculateEnhancedIndustryAlignment(member1, member2) {
+        const industry1 = this.getIndustry(member1);
+        const industry2 = this.getIndustry(member2);
+        
+        if (!industry1 || !industry2) return 0.3;
+        
+        // Enhanced industry groupings for better matching
+        const industryGroups = {
+            'tech': ['tech', 'software', 'saas', 'ai', 'machine learning', 'artificial intelligence', 'data', 'analytics'],
+            'fintech': ['fintech', 'finance', 'banking', 'payments', 'financial services', 'crypto', 'blockchain'],
+            'healthcare': ['healthcare', 'health tech', 'medical', 'biotech', 'pharma', 'digital health'],
+            'ecommerce': ['ecommerce', 'retail', 'consumer', 'marketplace', 'e-commerce', 'commerce'],
+            'education': ['education', 'edtech', 'learning', 'training', 'educational technology'],
+            'media': ['media', 'content', 'marketing', 'advertising', 'social media', 'digital marketing'],
+            'enterprise': ['enterprise', 'b2b', 'business software', 'productivity', 'workflow'],
+            'hardware': ['hardware', 'iot', 'robotics', 'manufacturing', 'industrial'],
+            'real_estate': ['real estate', 'proptech', 'construction', 'property'],
+            'energy': ['energy', 'cleantech', 'renewable', 'sustainability', 'green tech']
+        };
+        
+        // Check for exact industry match
+        if (industry1.toLowerCase() === industry2.toLowerCase()) return 1.0;
+        
+        // Check for industry group alignment
+        for (const [group, keywords] of Object.entries(industryGroups)) {
+            const inGroup1 = keywords.some(keyword => industry1.toLowerCase().includes(keyword));
+            const inGroup2 = keywords.some(keyword => industry2.toLowerCase().includes(keyword));
+            if (inGroup1 && inGroup2) return 0.8;
+        }
+        
+        // Check for complementary industries
+        const complementaryPairs = [
+            ['tech', 'finance'], ['saas', 'enterprise'], ['ai', 'healthcare'],
+            ['ecommerce', 'marketing'], ['fintech', 'enterprise']
+        ];
+        
+        for (const [ind1, ind2] of complementaryPairs) {
+            if ((industry1.toLowerCase().includes(ind1) && industry2.toLowerCase().includes(ind2)) ||
+                (industry1.toLowerCase().includes(ind2) && industry2.toLowerCase().includes(ind1))) {
+                return 0.7;
+            }
+        }
+        
+        return 0.3;
+    }
+
+    calculateStrategicPartnershipScore(member1, member2) {
+        let score = 0;
+        let commissionPotential = 0;
+        let partnershipType = 'general';
+        
+        const goals1 = this.extractAllBusinessGoals(member1);
+        const goals2 = this.extractAllBusinessGoals(member2);
+        
+        // Geographic expansion partnerships
+        if (this.hasInternationalExpansionGoals(goals1) && this.hasLocalMarketExpertise(member2)) {
+            score = 0.8;
+            commissionPotential = 0.6;
+            partnershipType = 'geographic_expansion';
+        } else if (this.hasInternationalExpansionGoals(goals2) && this.hasLocalMarketExpertise(member1)) {
+            score = 0.8;
+            commissionPotential = 0.6;
+            partnershipType = 'geographic_expansion';
+        }
+        
+        // Technology integration partnerships
+        else if (this.hasTechIntegrationNeeds(member1, member2)) {
+            score = 0.7;
+            commissionPotential = 0.5;
+            partnershipType = 'tech_integration';
+        }
+        
+        // Distribution partnerships
+        else if (this.hasDistributionPartnershipPotential(member1, member2)) {
+            score = 0.75;
+            commissionPotential = 0.6;
+            partnershipType = 'distribution';
+        }
+        
+        // Joint venture potential
+        else if (this.hasJointVenturePotential(member1, member2)) {
+            score = 0.6;
+            commissionPotential = 0.4;
+            partnershipType = 'joint_venture';
+        }
+        
+        return { score, commissionPotential, type: partnershipType };
+    }
+
+    calculateComplementarySkillsScore(member1, member2) {
+        const role1 = this.getRole(member1);
+        const role2 = this.getRole(member2);
+        const goals1 = this.extractAllBusinessGoals(member1);
+        const goals2 = this.extractAllBusinessGoals(member2);
+        
+        let score = 0;
+        
+        // Complementary role pairs
+        const complementaryRoles = [
+            ['founder', 'advisor'], ['ceo', 'investor'], ['technical', 'business'],
+            ['product', 'marketing'], ['sales', 'engineering'], ['finance', 'operations']
+        ];
+        
+        for (const [roleA, roleB] of complementaryRoles) {
+            if ((role1.includes(roleA) && role2.includes(roleB)) ||
+                (role1.includes(roleB) && role2.includes(roleA))) {
+                score = Math.max(score, 0.7);
+            }
+        }
+        
+        // Skill complementarity based on goals
+        if (this.hasComplementarySkillNeeds(goals1, goals2)) {
+            score = Math.max(score, 0.6);
+        }
+        
+        // Experience level complementarity
+        if (this.hasExperienceComplementarity(member1, member2)) {
+            score = Math.max(score, 0.5);
+        }
+        
+        return score;
+    }
+
+    calculateBasicCompatibility(member1, member2) {
+        let score = 0;
+        let factors = 0;
+        
+        // Any shared characteristics
+        if (this.hasSameIndustry(member1, member2)) {
+            score += 0.3;
+            factors++;
+        }
+        
+        if (this.hasSimilarCompanyStage(member1, member2)) {
+            score += 0.2;
+            factors++;
+        }
+        
+        if (this.hasSimilarLocation(member1, member2)) {
+            score += 0.2;
+            factors++;
+        }
+        
+        if (this.hasAnyGoalOverlap(member1, member2)) {
+            score += 0.3;
+            factors++;
+        }
+        
+        // Ensure minimum score for networking value
+        if (factors === 0) {
+            score = 0.2; // Basic networking value
+            factors = 1;
+        }
+        
+        return score / factors;
+    }
+
+    calculateEnhancedBusinessScore(match) {
+        let baseScore = match.score;
+        let businessMultiplier = 1.0;
+        
+        // Apply business value multipliers
+        switch (match.businessType) {
+            case 'fundraising_investor':
+                businessMultiplier = 1.2;
+                break;
+            case 'sales_gtm_partner':
+                businessMultiplier = 1.15;
+                break;
+            case 'founder_client':
+                businessMultiplier = 1.1;
+                break;
+            case 'service_provider':
+                businessMultiplier = 1.05;
+                break;
+            default:
+                businessMultiplier = 1.0;
+        }
+        
+        // Commission potential boost
+        const commissionBoost = (match.commissionPotential || 0) * 0.1;
+        
+        return Math.min(baseScore * businessMultiplier + commissionBoost, 1.0);
+    }
+
     extractGoals(member) {
         const professionalGoals = member['Professional Goals'] || '';
         const companyGoals = member['Company Goals'] || '';
@@ -879,6 +1284,189 @@ class MemberMatcher {
         return allGoals.split(',')
             .map(goal => goal.trim().toLowerCase())
             .filter(goal => goal.length > 0);
+    }
+
+    // Enhanced helper methods for business value analysis
+    extractAllBusinessGoals(member) {
+        const professionalGoals = member['Professional Goals'] || '';
+        const companyGoals = member['Company Goals'] || '';
+        const personalGoals = member['Personal Goals'] || '';
+        const industry = member['Industry'] || '';
+        const role = member['Role'] || '';
+        
+        return `${professionalGoals}, ${companyGoals}, ${personalGoals}, ${industry}, ${role}`.toLowerCase();
+    }
+
+    getCompanyStage(member) {
+        return (member['Company Stage'] || member['Stage'] || member['Funding Stage'] || '').toLowerCase();
+    }
+
+    getRole(member) {
+        return (member['Role'] || member['Title'] || member['Position'] || '').toLowerCase();
+    }
+
+    getIndustry(member) {
+        return (member['Industry'] || member['Vertical'] || member['Sector'] || '').toLowerCase();
+    }
+
+    isFundraising(goals) {
+        const fundraisingKeywords = ['fundraising', 'funding', 'investment', 'capital', 'series a', 'series b', 'seed', 'angel'];
+        return fundraisingKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    isInvestor(goals, role) {
+        const investorKeywords = ['investor', 'vc', 'venture capital', 'angel investor', 'investment', 'fund'];
+        return investorKeywords.some(keyword => goals.includes(keyword) || role.includes(keyword));
+    }
+
+    needsSalesGTM(goals) {
+        const salesKeywords = ['sales', 'go-to-market', 'gtm', 'growth', 'customer acquisition', 'revenue'];
+        return salesKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    canProvideGTM(goals, role) {
+        const gtmKeywords = ['marketing', 'sales', 'business development', 'partnerships', 'growth', 'gtm'];
+        return gtmKeywords.some(keyword => goals.includes(keyword) || role.includes(keyword));
+    }
+
+    isB2BFounder(member) {
+        const role = this.getRole(member);
+        const goals = this.extractAllBusinessGoals(member);
+        const founderKeywords = ['founder', 'ceo', 'co-founder'];
+        const b2bKeywords = ['b2b', 'enterprise', 'saas', 'business'];
+        
+        return founderKeywords.some(keyword => role.includes(keyword)) && 
+               b2bKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    isPotentialClient(founder, potentialClient) {
+        const founderIndustry = this.getIndustry(founder);
+        const clientIndustry = this.getIndustry(potentialClient);
+        const clientRole = this.getRole(potentialClient);
+        
+        // Check if potential client could use founder's services
+        const clientKeywords = ['manager', 'director', 'vp', 'head of', 'chief'];
+        return clientKeywords.some(keyword => clientRole.includes(keyword)) &&
+               (founderIndustry !== clientIndustry || founderIndustry === '');
+    }
+
+    isServiceProvider(member) {
+        const role = this.getRole(member);
+        const goals = this.extractAllBusinessGoals(member);
+        const serviceKeywords = ['consultant', 'agency', 'advisor', 'coach', 'services', 'consulting'];
+        
+        return serviceKeywords.some(keyword => role.includes(keyword) || goals.includes(keyword));
+    }
+
+    needsServices(member) {
+        const goals = this.extractAllBusinessGoals(member);
+        const serviceNeedKeywords = ['legal', 'marketing', 'recruiting', 'hr', 'accounting', 'design', 'development'];
+        
+        return serviceNeedKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    hasSameIndustry(member1, member2) {
+        const industry1 = this.getIndustry(member1);
+        const industry2 = this.getIndustry(member2);
+        
+        if (!industry1 || !industry2) return false;
+        
+        return industry1 === industry2 || 
+               industry1.includes(industry2) || 
+               industry2.includes(industry1);
+    }
+
+    hasComplementaryStages(stage1, stage2) {
+        const stageOrder = ['idea', 'pre-seed', 'seed', 'series a', 'series b', 'series c', 'growth', 'mature'];
+        const index1 = stageOrder.findIndex(stage => stage1.includes(stage));
+        const index2 = stageOrder.findIndex(stage => stage2.includes(stage));
+        
+        // Different stages can provide mentorship/guidance value
+        return index1 !== -1 && index2 !== -1 && Math.abs(index1 - index2) >= 1;
+    }
+
+    hasInternationalExpansionGoals(goals) {
+        const expansionKeywords = ['international', 'global', 'expansion', 'europe', 'asia', 'us market'];
+        return expansionKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    hasLocalMarketExpertise(member) {
+        const location = (member['Based In'] || '').toLowerCase();
+        const goals = this.extractAllBusinessGoals(member);
+        const expertiseKeywords = ['local', 'market expert', 'regional', 'domestic'];
+        
+        return location !== '' || expertiseKeywords.some(keyword => goals.includes(keyword));
+    }
+
+    hasTechIntegrationNeeds(member1, member2) {
+        const goals1 = this.extractAllBusinessGoals(member1);
+        const goals2 = this.extractAllBusinessGoals(member2);
+        const techKeywords = ['integration', 'api', 'platform', 'technical', 'development'];
+        
+        return techKeywords.some(keyword => goals1.includes(keyword) || goals2.includes(keyword));
+    }
+
+    hasDistributionPartnershipPotential(member1, member2) {
+        const goals1 = this.extractAllBusinessGoals(member1);
+        const goals2 = this.extractAllBusinessGoals(member2);
+        const distributionKeywords = ['distribution', 'channel', 'reseller', 'partner'];
+        
+        return distributionKeywords.some(keyword => goals1.includes(keyword) || goals2.includes(keyword));
+    }
+
+    hasJointVenturePotential(member1, member2) {
+        const industry1 = this.getIndustry(member1);
+        const industry2 = this.getIndustry(member2);
+        
+        // Same industry founders might have joint venture potential
+        return this.hasSameIndustry(member1, member2) && 
+               this.isB2BFounder(member1) && this.isB2BFounder(member2);
+    }
+
+    hasComplementarySkillNeeds(goals1, goals2) {
+        const skillPairs = [
+            ['technical', 'business'], ['product', 'marketing'], 
+            ['engineering', 'sales'], ['finance', 'operations']
+        ];
+        
+        for (const [skill1, skill2] of skillPairs) {
+            if ((goals1.includes(skill1) && goals2.includes(skill2)) ||
+                (goals1.includes(skill2) && goals2.includes(skill1))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    hasExperienceComplementarity(member1, member2) {
+        const stage1 = this.getCompanyStage(member1);
+        const stage2 = this.getCompanyStage(member2);
+        
+        // Different experience levels can be complementary
+        return this.hasComplementaryStages(stage1, stage2);
+    }
+
+    hasSimilarCompanyStage(member1, member2) {
+        const stage1 = this.getCompanyStage(member1);
+        const stage2 = this.getCompanyStage(member2);
+        
+        return stage1 === stage2 || stage1.includes(stage2) || stage2.includes(stage1);
+    }
+
+    hasSimilarLocation(member1, member2) {
+        const location1 = (member1['Based In'] || '').toLowerCase();
+        const location2 = (member2['Based In'] || '').toLowerCase();
+        
+        return location1 === location2 || 
+               location1.includes(location2) || 
+               location2.includes(location1);
+    }
+
+    hasAnyGoalOverlap(member1, member2) {
+        const goals1 = this.extractGoals(member1);
+        const goals2 = this.extractGoals(member2);
+        
+        return goals1.some(goal => goals2.includes(goal));
     }
 
     getCompany(member) {
@@ -938,6 +1526,104 @@ class MemberMatcher {
         return uniqueExplanations.length > 0 ? uniqueExplanations.join('. ') : 'Strong potential for collaboration based on complementary skills and goals.';
     }
 
+    generateBusinessValueExplanation(member1, member2, businessValue) {
+        const name1 = `${member1['First Name']} ${member1['Last Name']}`;
+        const name2 = `${member2['First Name']} ${member2['Last Name']}`;
+        const company1 = this.getCompany(member1);
+        const company2 = this.getCompany(member2);
+        
+        switch (businessValue.type) {
+            case 'fundraising_investor':
+                return `🎯 HIGH COMMISSION POTENTIAL: ${name1} is actively fundraising, ${name2} is an investor. Perfect match for potential investment with strong commission opportunity.`;
+            
+            case 'sales_gtm_partner':
+                return `💼 SALES OPPORTUNITY: ${name1} needs sales/GTM support, ${name2} provides strategic partnerships. Strong potential for revenue generation and commission.`;
+            
+            case 'founder_client':
+                const founder = this.isB2BFounder(member1) ? name1 : name2;
+                const client = founder === name1 ? name2 : name1;
+                return `🤝 CLIENT OPPORTUNITY: ${founder} offers B2B solutions that could benefit ${client}'s business. Direct sales potential with commission upside.`;
+            
+            case 'industry_mentorship':
+                return `📈 MENTORSHIP VALUE: Both in ${this.getIndustry(member1)} industry but different stages. Knowledge sharing with potential future business collaboration.`;
+            
+            case 'service_provider':
+                const provider = this.isServiceProvider(member1) ? name1 : name2;
+                const client2 = provider === name1 ? name2 : name1;
+                return `🔧 SERVICE MATCH: ${provider} provides services that ${client2} needs. Direct referral opportunity with commission potential.`;
+            
+            default:
+                return `✨ Strong business synergy potential between ${company1 || name1} and ${company2 || name2}.`;
+        }
+    }
+
+    generateIndustryAlignmentExplanation(member1, member2) {
+        const industry1 = this.getIndustry(member1);
+        const industry2 = this.getIndustry(member2);
+        const name1 = `${member1['First Name']} ${member1['Last Name']}`;
+        const name2 = `${member2['First Name']} ${member2['Last Name']}`;
+        
+        if (industry1 === industry2) {
+            return `🏭 INDUSTRY MATCH: Both operate in ${industry1}. Strong potential for knowledge sharing, partnerships, and industry-specific collaboration.`;
+        } else {
+            return `🔗 COMPLEMENTARY INDUSTRIES: ${name1} (${industry1}) and ${name2} (${industry2}) represent synergistic industries with cross-sector partnership potential.`;
+        }
+    }
+
+    generatePartnershipExplanation(member1, member2, partnership) {
+        const name1 = `${member1['First Name']} ${member1['Last Name']}`;
+        const name2 = `${member2['First Name']} ${member2['Last Name']}`;
+        
+        switch (partnership.type) {
+            case 'geographic_expansion':
+                return `🌍 GEOGRAPHIC SYNERGY: Expansion opportunity - one member seeking international growth, the other has local market expertise. Strong GTM partnership potential.`;
+            
+            case 'tech_integration':
+                return `⚙️ TECHNICAL PARTNERSHIP: Both have technology integration needs or capabilities. API partnerships, platform integrations, and technical collaboration opportunities.`;
+            
+            case 'distribution':
+                return `📦 DISTRIBUTION OPPORTUNITY: Strong potential for channel partnerships, reseller relationships, or distribution agreements between ${name1} and ${name2}.`;
+            
+            case 'joint_venture':
+                return `🤝 JOINT VENTURE POTENTIAL: Both are founders in similar spaces with potential for joint ventures, co-marketing, or collaborative product development.`;
+            
+            default:
+                return `🚀 Strategic partnership opportunity with business development and commission potential.`;
+        }
+    }
+
+    generateComplementaryExplanation(member1, member2) {
+        const role1 = this.getRole(member1);
+        const role2 = this.getRole(member2);
+        const name1 = `${member1['First Name']} ${member1['Last Name']}`;
+        const name2 = `${member2['First Name']} ${member2['Last Name']}`;
+        
+        return `🧩 SKILL COMPLEMENT: ${name1} (${role1}) and ${name2} (${role2}) have complementary skills and experience levels. Great for mentorship, collaboration, and knowledge exchange.`;
+    }
+
+    generateBasicExplanation(member1, member2) {
+        const name1 = `${member1['First Name']} ${member1['Last Name']}`;
+        const name2 = `${member2['First Name']} ${member2['Last Name']}`;
+        
+        const commonalities = [];
+        
+        if (this.hasSameIndustry(member1, member2)) {
+            commonalities.push(`shared industry (${this.getIndustry(member1)})`);
+        }
+        
+        if (this.hasSimilarLocation(member1, member2)) {
+            commonalities.push(`similar location`);
+        }
+        
+        if (this.hasAnyGoalOverlap(member1, member2)) {
+            commonalities.push(`aligned goals`);
+        }
+        
+        const commonalityText = commonalities.length > 0 ? commonalities.join(', ') : 'professional networking potential';
+        
+        return `🤝 NETWORKING VALUE: ${name1} and ${name2} share ${commonalityText}. Good foundation for professional relationship building.`;
+    }
+
     displayMatches() {
         const container = document.getElementById('matchesContainer');
         const paginationControls = document.getElementById('paginationControls');
@@ -945,37 +1631,63 @@ class MemberMatcher {
         container.innerHTML = '';
         
         if (this.matches.length === 0) {
-            // Show all members as a fallback
-            let membersHtml = '<h3>All Members</h3><div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">';
-            this.members.slice(0, 20).forEach(member => {
-                membersHtml += `
-                    <div style="background: #23243A; padding: 20px; border-radius: 12px; border: 1px solid #A18CD1;">
-                        <h4>${member['First Name']} ${member['Last Name']}</h4>
-                        <p>${member['Company Goals'] || member['Professional Goals'] || 'No goals specified'}</p>
-                        <p>${member['Industry'] || 'No industry specified'}</p>
-                    </div>
-                `;
-            });
-            membersHtml += '</div>';
-            
             container.innerHTML = `
                 <div class="no-matches">
-                    <h3>No matches found</h3>
-                    <p>Showing all members instead:</p>
-                    ${membersHtml}
+                    <h3>🔍 No matches found</h3>
+                    <p>Try selecting a different member or check that member profiles have sufficient information for matching.</p>
                 </div>
             `;
             paginationControls.style.display = 'none';
         } else {
+            // Add enhanced match summary
+            const matchSummary = this.generateMatchSummary();
+            const summaryHtml = `
+                <div class="match-summary-section">
+                    <div class="summary-header">
+                        <h3>🎯 Match Results for ${this.selectedMember['First Name']} ${this.selectedMember['Last Name']}</h3>
+                        <div class="summary-stats">
+                            <div class="stat-item">
+                                <span class="stat-number">${this.matches.length}</span>
+                                <span class="stat-label">Total Matches</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">${matchSummary.highCommission}</span>
+                                <span class="stat-label">High Commission</span>
+                            </div>
+                            <div class="stat-item">
+                                <span class="stat-number">${matchSummary.businessValue}</span>
+                                <span class="stat-label">Business Value</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="summary-breakdown">
+                        ${matchSummary.breakdown.map(item => `
+                            <div class="breakdown-item">
+                                <span class="breakdown-icon">${item.icon}</span>
+                                <span class="breakdown-label">${item.label}</span>
+                                <span class="breakdown-count">${item.count}</span>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+            
+            container.innerHTML = summaryHtml;
+            
             // Show only the first 4 matches initially
             const matchesToShow = this.matches.slice(0, this.matchesPerPage);
             this.displayedMatches = matchesToShow.length;
+            
+            // Create matches container for cards
+            const matchesCardsContainer = document.createElement('div');
+            matchesCardsContainer.className = 'matches-cards-container';
+            container.appendChild(matchesCardsContainer);
             
             matchesToShow.forEach((match, index) => {
                 const matchId = `${match.member1['First Name']}_${match.member1['Last Name']}__${match.member2['First Name']}_${match.member2['Last Name']}`;
                 const matchCard = this.createMatchCard(match, index, matchId);
                 // No need to add intro-checked class - dimming is handled in createMatchCard
-                container.appendChild(matchCard);
+                matchesCardsContainer.appendChild(matchCard);
             });
             
             // Hide pagination controls for infinite scroll
@@ -986,8 +1698,62 @@ class MemberMatcher {
         if (window.lucide) lucide.createIcons();
     }
 
+    generateMatchSummary() {
+        const summary = {
+            highCommission: 0,
+            businessValue: 0,
+            breakdown: []
+        };
+        
+        // Count different types of matches
+        const typeCounts = {};
+        
+        this.matches.forEach(match => {
+            const commissionLevel = match.commissionPotential || 0;
+            const businessType = match.businessType || 'networking';
+            
+            if (commissionLevel >= 0.6) {
+                summary.highCommission++;
+            }
+            if (commissionLevel >= 0.4) {
+                summary.businessValue++;
+            }
+            
+            typeCounts[businessType] = (typeCounts[businessType] || 0) + 1;
+        });
+        
+        // Create breakdown with icons
+        const typeLabels = {
+            'fundraising_investor': { icon: '💰', label: 'Fundraising Opportunities' },
+            'sales_gtm_partner': { icon: '📈', label: 'Sales & GTM Partners' },
+            'founder_client': { icon: '🎯', label: 'Client Matches' },
+            'service_provider': { icon: '🔧', label: 'Service Providers' },
+            'industry_synergy': { icon: '🏭', label: 'Industry Synergy' },
+            'strategic_partnership': { icon: '🤝', label: 'Strategic Partnerships' },
+            'complementary': { icon: '🧩', label: 'Skill Complements' },
+            'networking': { icon: '🤝', label: 'Networking' }
+        };
+        
+        for (const [type, count] of Object.entries(typeCounts)) {
+            if (count > 0) {
+                const typeInfo = typeLabels[type] || { icon: '🤝', label: type };
+                summary.breakdown.push({
+                    icon: typeInfo.icon,
+                    label: typeInfo.label,
+                    count: count
+                });
+            }
+        }
+        
+        // Sort breakdown by count (highest first)
+        summary.breakdown.sort((a, b) => b.count - a.count);
+        
+        return summary;
+    }
+
     loadMoreMatches() {
         const container = document.getElementById('matchesContainer');
+        const matchesCardsContainer = container.querySelector('.matches-cards-container');
         const paginationControls = document.getElementById('paginationControls');
         
         const startIndex = this.displayedMatches;
@@ -998,7 +1764,7 @@ class MemberMatcher {
             const matchId = `${match.member1['First Name']}_${match.member1['Last Name']}__${match.member2['First Name']}_${match.member2['Last Name']}`;
             const matchCard = this.createMatchCard(match, startIndex + index, matchId);
             // No need to add intro-checked class - dimming is handled in createMatchCard
-            container.appendChild(matchCard);
+            matchesCardsContainer.appendChild(matchCard);
         });
         
         this.displayedMatches = endIndex;
@@ -1070,7 +1836,51 @@ class MemberMatcher {
             const emailList = [email1, email2].filter(Boolean).join(',');
             mailtoUrl = `mailto:${emailList}?subject=${encodeURIComponent(introSubject)}&body=${encodeURIComponent(introBody)}`;
         }
-        // Create the match card HTML structure
+        // Generate business value and commission indicators
+        const commissionLevel = match.commissionPotential || 0;
+        const businessType = match.businessType || 'networking';
+        
+        let commissionBadge = '';
+        let businessTypeBadge = '';
+        
+        if (commissionLevel >= 0.8) {
+            commissionBadge = '<span class="commission-badge high">🎯 HIGH COMMISSION</span>';
+        } else if (commissionLevel >= 0.6) {
+            commissionBadge = '<span class="commission-badge medium">💼 SALES OPPORTUNITY</span>';
+        } else if (commissionLevel >= 0.4) {
+            commissionBadge = '<span class="commission-badge low">🤝 REFERRAL POTENTIAL</span>';
+        }
+        
+        // Business type badges
+        switch (businessType) {
+            case 'fundraising_investor':
+                businessTypeBadge = '<span class="business-type-badge fundraising">💰 FUNDRAISING</span>';
+                break;
+            case 'sales_gtm_partner':
+                businessTypeBadge = '<span class="business-type-badge sales">📈 GTM PARTNER</span>';
+                break;
+            case 'founder_client':
+                businessTypeBadge = '<span class="business-type-badge client">🎯 CLIENT MATCH</span>';
+                break;
+            case 'service_provider':
+                businessTypeBadge = '<span class="business-type-badge service">🔧 SERVICE MATCH</span>';
+                break;
+            case 'industry_synergy':
+                businessTypeBadge = '<span class="business-type-badge industry">🏭 INDUSTRY</span>';
+                break;
+            default:
+                businessTypeBadge = '<span class="business-type-badge networking">🤝 NETWORKING</span>';
+        }
+
+        // Member details for enhanced display
+        const member1Company = this.getCompany(member1) || 'No Company';
+        const member2Company = this.getCompany(member2) || 'No Company';
+        const member1Industry = this.getIndustry(member1) || 'No Industry';
+        const member2Industry = this.getIndustry(member2) || 'No Industry';
+        const member1Role = this.getRole(member1) || 'No Role';
+        const member2Role = this.getRole(member2) || 'No Role';
+
+        // Create the enhanced match card HTML structure
         card.innerHTML = `
             <div class="match-card-header">
                 <div class="match-info">
@@ -1079,29 +1889,64 @@ class MemberMatcher {
                             ${member1Display} <i data-lucide="handshake" class="handshake-outline"></i> ${member2Display}
                         </h3>
                     </div>
-                    <div class="match-score">
-                        <span class="score-label">Match Score:</span>
-                        <span class="score-value">${Math.round(match.score * 100)}%</span>
+                    <div class="match-meta">
+                        <div class="match-score">
+                            <span class="score-label">Match Score:</span>
+                            <span class="score-value">${Math.round(match.score * 100)}%</span>
+                        </div>
+                        <div class="match-badges">
+                            ${commissionBadge}
+                            ${businessTypeBadge}
+                        </div>
                     </div>
                 </div>
                 <span class="intro-check-icon" style="display:none; position:absolute; top:16px; right:20px; z-index:2; cursor:pointer;">
                     <i data-lucide="check" class="checkmark-white"></i>
                 </span>
             </div>
+            
+            <div class="member-details-section">
+                <div class="member-detail">
+                    <div class="member-summary">
+                        <strong>${member1Name}</strong>
+                        <div class="member-info-grid">
+                            <span class="info-item">🏢 ${member1Company}</span>
+                            <span class="info-item">🏭 ${member1Industry}</span>
+                            <span class="info-item">👨‍💼 ${member1Role}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="vs-divider">⚡</div>
+                <div class="member-detail">
+                    <div class="member-summary">
+                        <strong>${member2Name}</strong>
+                        <div class="member-info-grid">
+                            <span class="info-item">🏢 ${member2Company}</span>
+                            <span class="info-item">🏭 ${member2Industry}</span>
+                            <span class="info-item">👨‍💼 ${member2Role}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
             <div class="match-explanation">
                 <div class="explanation-title">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M15.09 16.05A6.49 6.49 0 0 1 9 12c0-3.59 2.91-6.5 6.5-6.5a6.49 6.49 0 0 1 6.41 7.91L21 15h-3l-1.59-2.95"/><path d="M9 12a6.5 6.5 0 0 0-6.41-7.91L1 9h3l1.59 2.95"/><line x1="12" y1="22" x2="12" y2="18"/><line x1="8" y1="16" x2="16" y2="16"/></svg>
-                    Why This Match Works
+                    Business Value & Match Reasoning
                 </div>
-                <div class="explanation-list">
-                    ${match.explanation.split('. ').map(reason => reason ? `<div class='explanation-item'>${reason}</div>` : '').join('')}
+                <div class="explanation-content">
+                    ${match.explanation}
                 </div>
             </div>
+            
             <div class="match-actions">
                 <a href="${mailtoUrl}" class="action-button primary-action">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                    Intro
+                    Make Introduction
                 </a>
+                <div class="commission-indicator">
+                    Commission Potential: <span class="commission-percentage">${Math.round(commissionLevel * 100)}%</span>
+                </div>
             </div>
         `;
         // Check icon logic
